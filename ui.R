@@ -22,6 +22,7 @@ ui <- fluidPage(
       10,
       plotOutput("cumulative_rain"),
       uiOutput("choose_graph"),
+     #actionButton("gen_graph", "Generate Graph"),
       DT::dataTableOutput("stats")
     )
   )

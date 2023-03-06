@@ -7,7 +7,11 @@ server <- function(input, output) {
     rain <- rain |>
       dplyr::select(c(input$date_column, input$rain_column))
     names(rain) <- c("datetime", "rain")
-    rain <- rain |>
+    rain
+  })
+  
+  payload <- reactive({
+    data_input() |>
       dplyr::arrange(datetime)
     rain_json <- jsonlite::toJSON(rain, dataframe = "columns", POSIXt = "ISO8601")
     rain_json
@@ -37,14 +41,14 @@ server <- function(input, output) {
     bindEvent(input$file$datapath)
   
   observe({
-    updateSelectInput(inputId = "choose_graph", choices = 1:nrow(statistics()))
+    updateSelectInput(inputId = "choose_graph", choices = 1:nrow(statistics()), selected = 1)
   }) |>
     bindEvent(statistics())
   
   
   
   response <- reactive({
-    body = data_input()
+    body = payload()
     res <- httr::PUT("https://nexus.sccwrp.org/bioretentionapi/rain", body = body, encode = "json", httr::content_type_json())
     content <- httr::content(res)
     content
@@ -56,40 +60,61 @@ server <- function(input, output) {
       tidyr::unnest(
         cols = c(
           first_rain, 
+          last_rain,
           total_rainfall, 
           avg_rainfall_intensity,
           peak_5_min_rainfall_intensity,
           peak_10_min_rainfall_intensity
         )
       ) |>
-      dplyr::mutate(first_rain = lubridate::as_datetime(first_rain)) |>
+      dplyr::arrange(first_rain) |>
+      dplyr::mutate(
+        first_rain = lubridate::as_datetime(first_rain),
+        last_rain = lubridate::as_datetime(last_rain),
+        event = dplyr::row_number()
+      ) |>
       dplyr::select(
+        event,
         first_rain,
+        last_rain,
         total_rainfall,
         avg_rainfall_intensity,
         peak_5_min_rainfall_intensity,
         peak_10_min_rainfall_intensity
-      ) |>
-      dplyr::arrange(first_rain)
+      ) 
   }) |>
     bindEvent(input$submit)
   
   output$stats <- DT::renderDataTable({
-    statistics()
+    statistics() |>
+      dplyr::select(-event, -last_rain)
   }, selection = 'none')
   
   output$cumulative_rain <- renderPlot({
-    cumulative_rain <- response()$cumulative_rain |>
-      tibble::as_tibble() |>
-      tidyr::unnest(cols = c(datetime, rain)) |>
+    cumulative_rain <- data_input() |> 
+      dplyr::mutate(dummy = TRUE) |> 
+      dplyr::left_join(
+        statistics() |> 
+          dplyr::mutate(dummy = TRUE) |> 
+          dplyr::select(dummy, event, first_rain, last_rain), 
+        multiple = 'all'
+      ) |> 
+      dplyr::group_by(event) |>
+      dplyr::filter(
+        datetime >= first_rain, 
+        datetime <= last_rain,
+        event == as.numeric(input$choose_graph)
+      ) |> 
+      dplyr::select(-dummy) |> 
+      dplyr::arrange(datetime) |>
       dplyr::mutate(
-        datetime = lubridate::as_datetime(datetime),
-        hours = lubridate::time_length(datetime - datetime[1], unit = 'hours')
+        cumsum = cumsum(rain),
+        hours = lubridate::time_length(datetime - datetime[1], unit = "hour")
       )
 
-    ggplot(cumulative_rain, aes(x = hours, y = rain)) +
+    ggplot(cumulative_rain, aes(x = hours, y = cumsum)) +
       geom_line() + 
       labs(x = "Hours Elapsed", y = "Cumulative Rainfall")
   }) |>
-    bindEvent(input$submit)
+    bindEvent(input$choose_graph)
 }
