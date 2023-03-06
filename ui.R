@@ -14,11 +14,14 @@ ui <- fluidPage(
         multiple = FALSE,
         accept = ".xlsx"
       ),
-      actionButton("submit", "Submit")
+      actionButton("submit", "Submit"),
+      uiOutput("date_column"),
+      uiOutput("rain_column")
     ),
     column(
       10,
       plotOutput("cumulative_rain"),
+      uiOutput("choose_graph"),
       DT::dataTableOutput("stats")
     )
   )

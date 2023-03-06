@@ -4,12 +4,44 @@ server <- function(input, output) {
   
   data_input <- reactive({
     rain <- readxl::read_excel(input$file$datapath)
+    rain <- rain |>
+      dplyr::select(c(input$date_column, input$rain_column))
     names(rain) <- c("datetime", "rain")
     rain <- rain |>
       dplyr::arrange(datetime)
     rain_json <- jsonlite::toJSON(rain, dataframe = "columns", POSIXt = "ISO8601")
     rain_json
   })
+  
+  output$date_column <- renderUI({
+    selectInput(inputId = "date_column", label = "Date Column", choices = "")
+  })
+  
+  output$rain_column <- renderUI({
+    selectInput(inputId = "rain_column", label = "Rain Depth Column", choices = "")
+  })
+  
+  output$choose_graph <- renderUI({
+    selectInput(inputId = "choose_graph", label = "Choose Rain Event", choices = "")
+  }) |>
+    bindEvent(statistics())
+  
+  observe({
+    updateSelectInput(inputId = "date_column", choices = readxl::read_excel(input$file$datapath) |> names())
+  }) |>
+    bindEvent(input$file$datapath)
+  
+  observe({
+    updateSelectInput(inputId = "rain_column", choices = readxl::read_excel(input$file$datapath) |> names())
+  }) |>
+    bindEvent(input$file$datapath)
+  
+  observe({
+    updateSelectInput(inputId = "choose_graph", choices = 1:nrow(statistics()))
+  }) |>
+    bindEvent(statistics())
+  
+  
   
   response <- reactive({
     body = data_input()
