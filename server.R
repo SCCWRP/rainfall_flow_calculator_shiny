@@ -11,7 +11,7 @@ server <- function(input, output) {
   })
   
   payload <- reactive({
-    data_input() |>
+    rain <- data_input() |>
       dplyr::arrange(datetime)
     rain_json <- jsonlite::toJSON(rain, dataframe = "columns", POSIXt = "ISO8601")
     rain_json
@@ -49,7 +49,7 @@ server <- function(input, output) {
   
   response <- reactive({
     body = payload()
-    res <- httr::PUT("https://nexus.sccwrp.org/bioretentionapi/rain", body = body, encode = "json", httr::content_type_json())
+    res <- httr::POST("https://nexus.sccwrp.org/bioretentionapi/rain", body = body, encode = "json", httr::content_type_json())
     content <- httr::content(res)
     content
   })
