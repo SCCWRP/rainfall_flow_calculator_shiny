@@ -5,6 +5,8 @@ library(jsonlite)
 library(dplyr)
 library(tidyr)
 library(lubridate)
+library(tidyverse)
+
 
 source('ui.R')
 source('server.R')

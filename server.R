@@ -1,6 +1,13 @@
 library(ggplot2)
-
+library(zip)
+library(writexl)
 server <- function(input, output) {
+  
+  shinyjs::hide("download_summary")
+  shinyjs::hide("download_plot")
+  shinyjs::hide("notice")
+  
+  
   
   data_input <- reactive({
     rain <- readxl::read_excel(input$file$datapath)
@@ -86,11 +93,34 @@ server <- function(input, output) {
     bindEvent(input$submit)
   
   output$stats <- DT::renderDataTable({
-    statistics() |>
-      dplyr::select(-event, -last_rain)
+    data <- statistics() |>
+      dplyr::select(-last_rain) |>
+      dplyr::mutate(first_rain = format(as.POSIXct(first_rain), format = "%Y-%m-%d %H:%M:%S")) 
+    if (input$rainfall_resolution == 0.1){
+      data <- data |> dplyr::rename(
+        `Event ID`= event,
+        `Storm Date`= first_rain,
+        `Total Rainfall (P) (mm)` = total_rainfall,
+        `Average Rainfall Intensity (mm/hour)` = avg_rainfall_intensity,
+        `Peak 5-min Rainfall Intensity (mm)` = peak_5_min_rainfall_intensity,
+        `Peak 10-min Rainfall Intensity (mm)` = peak_10_min_rainfall_intensity
+        )
+    } else {
+      data <- data |> dplyr::rename(
+        `Event ID`= event,
+        `Storm Date`= first_rain,
+        `Total Rainfall (P) (inches)` = total_rainfall,
+        `Average Rainfall Intensity (inch/hour)` = avg_rainfall_intensity,
+        `Peak 5-min Rainfall Intensity (inches)` = peak_5_min_rainfall_intensity,
+        `Peak 10-min Rainfall Intensity (inches)` = peak_10_min_rainfall_intensity
+      )  
+    }
+      
+    
+    
   }, selection = 'none')
   
-  output$cumulative_rain <- renderPlot({
+  plotInput <- reactive({
     cumulative_rain <- data_input() |> 
       dplyr::mutate(dummy = TRUE) |> 
       dplyr::left_join(
@@ -111,10 +141,70 @@ server <- function(input, output) {
         cumsum = cumsum(rain),
         hours = lubridate::time_length(datetime - datetime[1], unit = "hour")
       )
-
+    
     ggplot(cumulative_rain, aes(x = hours, y = cumsum)) +
       geom_line() + 
       labs(x = "Hours Elapsed", y = "Cumulative Rainfall")
-  }) |>
-    bindEvent(input$choose_graph)
+  })
+  
+  output$cumulative_rain <- renderPlot({
+    plotInput()
+  }) |> bindEvent(input$choose_graph)
+  
+  output$download_demo_1min <- downloadHandler(
+    filename = function() {
+      paste("demo_data_1min", ".xlsx", sep = "")
+    },
+    content = function(file) {
+      data <- readxl::read_excel("1min.xlsx")
+      print(data)
+      writexl::write_xlsx(data, file)
+    }
+  )
+  
+  output$download_demo_tt <- downloadHandler(
+    filename = function() {
+      paste("demo_data_timeoftips", ".xlsx", sep = "")
+    },
+    content = function(file) {
+      data <- readxl::read_excel("timeoftips.xlsx")
+      print(data)
+      writexl::write_xlsx(data, file)
+    }
+  )
+  
+  output$download_summary <- downloadHandler(
+    filename = function() {
+      paste("rain_summary", ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(statistics(), file, row.names = FALSE)
+    }
+  )
+  
+  
+  output$download_plot <- downloadHandler(
+    filename = function() {
+      paste("cumulative_rain", ".png", sep = "")
+    },
+    content = function(file) {
+      ggsave(file, plot = plotInput(), device = "png")
+    }
+  )
+  
+  
+  observeEvent(input$submit, {
+
+      shinyjs::show("notice")
+      shinyjs::show("download_summary")
+      shinyjs::show("download_plot")
+
+  })
+  
+  
+  
+  
+  
+  
+  
 }
