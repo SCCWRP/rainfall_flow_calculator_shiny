@@ -3,11 +3,41 @@ library(zip)
 library(writexl)
 server <- function(input, output) {
   
-  shinyjs::hide("download_summary")
-  shinyjs::hide("download_plot")
-  shinyjs::hide("notice")
-  
-  
+  observeEvent(input$submit, {
+      insertTab(
+        "full_page",
+        tab = tabPanel(
+          "Rainfall Analysis",
+          fluidRow(
+            column(
+              6,
+              align = "center",
+              br(),
+
+
+                  DT::dataTableOutput("stats"),
+                  br(),
+                  downloadButton("download_summary", "Download Table")
+                
+              
+            ),
+            column(
+              5,
+              offset = 1,
+              align = "center",
+              br(),
+              br(),
+              plotOutput("cumulative_rain"),
+              downloadButton("download_plot", "Download Plot"),
+              uiOutput("choose_graph"),
+            )
+            
+          )
+        ),
+        select = TRUE
+      )
+    }
+  ) 
   
   data_input <- reactive({
     rain <- readxl::read_excel(input$file$datapath)
@@ -141,10 +171,12 @@ server <- function(input, output) {
         cumsum = cumsum(rain),
         hours = lubridate::time_length(datetime - datetime[1], unit = "hour")
       )
-    
+    print("cumulative_rain")
+    print(cumulative_rain)
     ggplot(cumulative_rain, aes(x = hours, y = cumsum)) +
       geom_line() + 
       labs(x = "Hours Elapsed", y = "Cumulative Rainfall")
+    print(cumulative_rain)
   })
   
   output$cumulative_rain <- renderPlot({
@@ -156,7 +188,7 @@ server <- function(input, output) {
       paste("demo_data_1min", ".xlsx", sep = "")
     },
     content = function(file) {
-      data <- readxl::read_excel("1min.xlsx")
+      data <- readxl::read_excel("demo_data/1min.xlsx")
       print(data)
       writexl::write_xlsx(data, file)
     }
@@ -167,7 +199,18 @@ server <- function(input, output) {
       paste("demo_data_timeoftips", ".xlsx", sep = "")
     },
     content = function(file) {
-      data <- readxl::read_excel("timeoftips.xlsx")
+      data <- readxl::read_excel("demo_data/timeoftips.xlsx")
+      print(data)
+      writexl::write_xlsx(data, file)
+    }
+  )
+  
+  output$download_demo_flow <- downloadHandler(
+    filename = function() {
+      paste("demo_data_flow", ".xlsx", sep = "")
+    },
+    content = function(file) {
+      data <- readxl::read_excel("demo_data/flowrate.xlsx")
       print(data)
       writexl::write_xlsx(data, file)
     }
@@ -200,11 +243,7 @@ server <- function(input, output) {
       shinyjs::show("download_plot")
 
   })
-  
-  
-  
-  
-  
+
   
   
 }
