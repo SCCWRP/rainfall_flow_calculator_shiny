@@ -82,8 +82,6 @@ server <- function(input, output) {
   }) |>
     bindEvent(statistics())
   
-  
-  
   response <- reactive({
     body = payload()
     res <- httr::POST("https://nexus.sccwrp.org/bioretentionapi/rain", body = body, encode = "json", httr::content_type_json())
