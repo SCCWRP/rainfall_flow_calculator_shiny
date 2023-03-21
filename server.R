@@ -1,25 +1,110 @@
 library(ggplot2)
 library(zip)
 library(writexl)
+
 server <- function(input, output) {
   
+  observe({
+
+    if (input$analysistype == 'Rainfall Analysis') {
+    
+      output$test <- renderUI({
+        tagList(
+        column(
+          4,
+          align = "left",
+          br(),
+          fileInput(
+            "file",
+            "Step 1: Upload an Excel File",
+            multiple = FALSE,
+            accept = ".xlsx"
+          ),
+          selectInput(inputId = "rainfall_resolution",
+                      label = "Step 2: Choose the rainfall resolution",
+                      choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
+                      selected = "0.01 inch"),
+        ),
+        column(
+          4,
+          align = "left",
+          uiOutput("date_column"),
+          uiOutput("rain_column")
+        ),
+        
+        column(
+          4,
+          align = "left",
+          uiOutput("flow_column"),
+          actionButton("submit", "Submit")
+        )
+        )
+      })
+    } else {
+      output$test <- renderUI({
+        tagList(
+          column(
+            2,
+          ),
+          column(
+            2,
+            align = "left",
+            br(),
+            fileInput(
+              "file",
+              "Step 1: Upload an Excel File",
+              multiple = FALSE,
+              accept = ".xlsx"
+            ),
+            selectInput(inputId = "rainfall_resolution",
+                        label = "Step 2: Choose the rainfall resolution",
+                        choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
+                        selected = "0.01 inch"),
+          ),
+          column(
+            2,
+            align = "left",
+            uiOutput("date_column"),
+            uiOutput("rain_column")
+          ),
+          
+          # column(
+          #   2,
+          #   align = "left",
+          #   uiOutput("flow_column"),
+          #   actionButton("submit", "Submit")
+          # )
+        )
+      })
+    }
+  })
+  
+  
+  ######## tab control based on whether pollutant data is included, updates dynamically
+  tabs_list <- reactiveValues(data = list("Rainfall-Analysis" = NULL, "Flow-Analysis" = NULL))
+  
+  observeEvent(
+    input$submit,{
+      showModal(modalDialog("Loading", footer=NULL))
+    }
+  )
+
   observeEvent(statistics(), {
+
+    if (is.null(tabs_list[['Rainfall-Analysis']])) {
       insertTab(
         "full_page",
         tab = tabPanel(
           "Rainfall Analysis",
+          
           fluidRow(
             column(
-              3,
+              5,
               align = "center",
               br(),
-              
-              
               DT::dataTableOutput("stats"),
               br(),
               downloadButton("download_summary", "Download Table")
-              
-              
             ),
             column(
               5,
@@ -27,7 +112,6 @@ server <- function(input, output) {
               align = "center",
               br(),
               br(),
-              
               plotOutput("cumulative_rain"),
               selectInput("choose_graph", "Choose An Event", choices = 1:nrow(statistics()), selected = 1),
               downloadButton("download_plot", "Download Plot"),
@@ -36,6 +120,9 @@ server <- function(input, output) {
         ),
         select = TRUE
       )
+      tabs_list[["Rainfall-Analysis"]] = "Rainfall-Analysis"
+      }
+    removeModal()
     }
   ) 
   
@@ -55,12 +142,17 @@ server <- function(input, output) {
   })
   
   output$date_column <- renderUI({
-    selectInput(inputId = "date_column", label = "Date Column", choices = "")
+    selectInput(inputId = "date_column", label = "Step 3: Choose a column representing datetime", choices = "")
   })
   
   output$rain_column <- renderUI({
-    selectInput(inputId = "rain_column", label = "Rain Depth Column", choices = "")
+    selectInput(inputId = "rain_column", label = "Step 4: Choose a column representing rainfall data", choices = "")
   })
+  
+  output$flow_column <- renderUI({
+    selectInput(inputId = "flow_column", label = "Step 5: Choose a column representing flow data", choices = "")
+  })
+  
   
   output$choose_graph <- renderUI({
     selectInput(inputId = "choose_graph", label = "Choose Rain Event", choices = "")
@@ -76,6 +168,12 @@ server <- function(input, output) {
     updateSelectInput(inputId = "rain_column", choices = readxl::read_excel(input$file$datapath) |> names())
   }) |>
     bindEvent(input$file$datapath)
+  
+  observe({
+    updateSelectInput(inputId = "flow_column", choices = readxl::read_excel(input$file$datapath) |> names())
+  }) |>
+    bindEvent(input$file$datapath)
+  
   
   observeEvent(input$submit,{
     updateSelectInput(inputId = "choose_graph", choices = 1:nrow(statistics()), selected = 1)
@@ -122,6 +220,7 @@ server <- function(input, output) {
     bindEvent(input$submit)
   
   output$stats <- DT::renderDataTable({
+    
     data <- statistics() |>
       dplyr::select(-last_rain) |>
       dplyr::mutate(first_rain = format(as.POSIXct(first_rain), format = "%Y-%m-%d %H:%M:%S")) 

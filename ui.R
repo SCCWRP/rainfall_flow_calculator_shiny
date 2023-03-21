@@ -1,40 +1,30 @@
 library(shinyjs)
-
-
+library(shiny)
+library(shinycssloaders)
 ui <- fluidPage(
   useShinyjs(),
   
   
   # Application title
   titlePanel("Rainfall and Flow Analysis"),
-  
+
   # Sidebar with a slider input for number of bins 
   fluidRow(
     column(
       1,
       div()
     ),
-    column(
-      1,
-      align = "left",
-      fileInput(
-        "file",
-        "Choose Excel File",
-        multiple = FALSE,
-        accept = ".xlsx"
-      ),
-      actionButton("submit", "Submit")
-    ),
-    column(
-      2,
-      align = "left",
-      selectInput(inputId = "rainfall_resolution",
-                  label = "Choose your rainfall resolution:",
-                  choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
-                  selected = "0.01 inch"),
-      uiOutput("date_column"),
-      uiOutput("rain_column")
-    )
+    column(2,
+    radioButtons(
+      "analysistype", 
+      "Choose an option:",
+      choices = c("Rainfall Analysis", "Flow Analysis", "Both Rainfall and Flow Analysis")
+    )),
+    column(7,
+           uiOutput("test")
+           
+           )
+   
   ),
     
   tabsetPanel(
@@ -56,7 +46,6 @@ ui <- fluidPage(
       </ol>
          "),
       hr()
-
     ),
     id='full_page'
   )
