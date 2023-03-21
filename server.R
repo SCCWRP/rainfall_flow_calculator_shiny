@@ -301,7 +301,7 @@ server <- function(input, output) {
       
     
     
-  }, selection = 'none')
+  }, selection = 'none', rownames = FALSE)
   
   plotInput <- reactive({
     if (input$choose_graph == "All events"){
