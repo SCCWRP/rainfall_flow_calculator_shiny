@@ -3,22 +3,22 @@ library(zip)
 library(writexl)
 server <- function(input, output) {
   
-  observeEvent(input$submit, {
+  observeEvent(statistics(), {
       insertTab(
         "full_page",
         tab = tabPanel(
           "Rainfall Analysis",
           fluidRow(
             column(
-              6,
+              3,
               align = "center",
               br(),
-
-
-                  DT::dataTableOutput("stats"),
-                  br(),
-                  downloadButton("download_summary", "Download Table")
-                
+              
+              
+              DT::dataTableOutput("stats"),
+              br(),
+              downloadButton("download_summary", "Download Table")
+              
               
             ),
             column(
@@ -27,11 +27,11 @@ server <- function(input, output) {
               align = "center",
               br(),
               br(),
+              
               plotOutput("cumulative_rain"),
+              selectInput("choose_graph", "Choose An Event", choices = 1:nrow(statistics()), selected = 1),
               downloadButton("download_plot", "Download Plot"),
-              uiOutput("choose_graph"),
             )
-            
           )
         ),
         select = TRUE
@@ -77,10 +77,11 @@ server <- function(input, output) {
   }) |>
     bindEvent(input$file$datapath)
   
-  observe({
+  observeEvent(input$submit,{
     updateSelectInput(inputId = "choose_graph", choices = 1:nrow(statistics()), selected = 1)
-  }) |>
-    bindEvent(statistics())
+  }
+  )
+
   
   response <- reactive({
     body = payload()
@@ -169,12 +170,9 @@ server <- function(input, output) {
         cumsum = cumsum(rain),
         hours = lubridate::time_length(datetime - datetime[1], unit = "hour")
       )
-    print("cumulative_rain")
-    print(cumulative_rain)
     ggplot(cumulative_rain, aes(x = hours, y = cumsum)) +
       geom_line() + 
       labs(x = "Hours Elapsed", y = "Cumulative Rainfall")
-    print(cumulative_rain)
   })
   
   output$cumulative_rain <- renderPlot({
