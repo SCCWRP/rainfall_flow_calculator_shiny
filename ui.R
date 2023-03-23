@@ -36,23 +36,39 @@ ui <- fluidPage(
       HTML("
       <ol>
         <li>
-              Rainfall Analysis: When a user uploads rainfall data, the application provides a summary statistics of rainfall, and the plot of cumulative rainfall
+              Rainfall Analysis: When a user uploads rainfall data, the application provides a summary statistics of rainfall, and a plot of cumulative rainfall"),
+                HTML("<ul>"),
+                HTML("<li>"),
+                downloadLink("download_demo_1min", label = "Download 1-min demo data"), 
+                HTML("</li>"),
+                HTML("<li>"),
+                downloadLink("download_demo_tt", label = "Download time of tips demo data"), 
+                HTML("</li>"),
+                HTML("</ul>"),
+                HTML("
+        </li>
+        <li>
+              Flow Analysis: When a user uploads flow data, the application provides a summary statistics of flow"),
+                HTML("<ul>"),
+                HTML("<li>"),
+                downloadLink("download_demo_flow", label = "Download flow demo data"), 
+                HTML("</li>"),
+                HTML("</ul>"),
+                HTML("     
         </li>
         
         <li>
-              Flow Analysis: When a user uploads flow data, the application provides a summary statistics of flow
+              Both Rainfall and Flow Analysis: When a user uploads both rainfall and flow data, the application provides the summary statistics of both rainfall and flow"),
+                HTML("<ul>"),
+                HTML("<li>"),
+                downloadLink("download_demo_rainfall_flow", label = "Download both rainfall and flow data in one file"), 
+                HTML("</li>"),
+                HTML("</ul>"),
+                HTML("         
         </li>
-        
-        <li>
-              Both Rainfall and Flow Analysis: When a user uploads both rainfall and flow data, the application provides the summary statistics of both rainfall and flow
         </li>
-        
-        </li>
-      
-          
       </ol>
          "),
-      HTML("Download the demo data by clicking ",), downloadLink("download_demo_1min", label = "here for 1-min data"), HTML("or",), downloadLink("download_demo_tt", label = "here for time of tips data"), HTML(""),
       hr(),
       h3("Data Requirements"),
       HTML("The uploaded Excel spreadsheet must conform to the following requirements:
