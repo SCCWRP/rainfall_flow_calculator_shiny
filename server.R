@@ -6,9 +6,7 @@ library(glue)
 server <- function(input, output) {
   
   observe({
-
     if (input$analysistype == 'Rainfall Analysis') {
-    
       output$user_input <- renderUI({
         tagList(
           column(
@@ -21,10 +19,12 @@ server <- function(input, output) {
               multiple = FALSE,
               accept = ".xlsx"
             ),
-            selectInput(inputId = "rainfall_resolution",
-                        label = "Step 2: Choose the rainfall resolution",
-                        choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
-                        selected = "0.01 inch"),
+            selectInput(
+              inputId = "rainfall_resolution",
+              label = "Step 2: Choose the rainfall resolution",
+              choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
+              selected = "0.01 inch"
+            ),
           ),
           column(
             4,
@@ -32,7 +32,6 @@ server <- function(input, output) {
             uiOutput("date_column"),
             uiOutput("rain_column")
           ),
-          
           column(
             4,
             br(),
@@ -57,10 +56,12 @@ server <- function(input, output) {
               multiple = FALSE,
               accept = ".xlsx"
             ),
-            selectInput(inputId = "rainfall_resolution",
-                        label = "Step 2: Choose the rainfall resolution",
-                        choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
-                        selected = "0.01 inch"),
+            selectInput(
+              inputId = "rainfall_resolution",
+              label = "Step 2: Choose the rainfall resolution",
+              choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
+              selected = "0.01 inch"
+            ),
           ),
           column(
             4,
@@ -92,10 +93,12 @@ server <- function(input, output) {
             multiple = FALSE,
             accept = ".xlsx"
           ),
-          selectInput(inputId = "rainfall_resolution",
-                      label = "Step 2: Choose the rainfall resolution",
-                      choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
-                      selected = "0.01 inch"),
+          selectInput(
+            inputId = "rainfall_resolution",
+            label = "Step 2: Choose the rainfall resolution",
+            choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
+            selected = "0.01 inch"
+          ),
         ),
         column(
           4,
@@ -103,7 +106,6 @@ server <- function(input, output) {
           uiOutput("date_column"),
           uiOutput("rain_column")
         ),
-        
         column(
           4,
           align = "left",
@@ -112,14 +114,12 @@ server <- function(input, output) {
           br(),
           actionButton("submit", "Submit", width = '200px')
         )
-        
       )})     
     }
   })
   
   observe({
     if(input$analysistype == 'Flow Analysis'){
-      print("true")
       updateSelectInput(inputId = "flow_column", label = "Step 4: Choose a column containing flow values")
     }
   })
@@ -284,18 +284,18 @@ server <- function(input, output) {
         `Event ID`= event,
         `Storm Date`= first_rain,
         `Total Rainfall (P) (mm)` = total_rainfall,
-        `Average Rainfall Intensity (mm/hour)` = avg_rainfall_intensity,
-        `Peak 5-min Rainfall Intensity (mm/5-min)` = peak_5_min_rainfall_intensity,
-        `Peak 10-min Rainfall Intensity (2*mm/5-min)` = peak_10_min_rainfall_intensity
+        `Average Rainfall Intensity (mm/hr)` = avg_rainfall_intensity,
+        `Peak 5-min Rainfall Intensity (mm/hr)` = peak_5_min_rainfall_intensity,
+        `Peak 10-min Rainfall Intensity (mm/hr)` = peak_10_min_rainfall_intensity
         )
     } else {
       data <- data |> dplyr::rename(
         `Event ID`= event,
         `Storm Date`= first_rain,
         `Total Rainfall (P) (inches)` = total_rainfall,
-        `Average Rainfall Intensity (inch/hour)` = avg_rainfall_intensity,
-        `Peak 5-min Rainfall Intensity (inches/5-min)` = peak_5_min_rainfall_intensity,
-        `Peak 10-min Rainfall Intensity (2*inches/5-min)` = peak_10_min_rainfall_intensity
+        `Average Rainfall Intensity (inch/hr)` = avg_rainfall_intensity,
+        `Peak 5-min Rainfall Intensity (inch/hr)` = peak_5_min_rainfall_intensity,
+        `Peak 10-min Rainfall Intensity (inch/hr)` = peak_10_min_rainfall_intensity
       )  
     }
       
