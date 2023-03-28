@@ -28,12 +28,7 @@ server <- function(input, output) {
               selected = "0.01 inch"
             ),
           ),
-          column(
-            4,
-            align = "left",
-            uiOutput("date_column"),
-            uiOutput("rain_column")
-          ),
+
           column(
             4,
             br(),
@@ -232,9 +227,10 @@ server <- function(input, output) {
     user_data <- readxl::read_excel(input$file$datapath)
     if(input$analysistype == 'Rainfall Analysis'){
       user_data <- user_data |>
-        dplyr::select(c(input$date_column, input$rain_column))
-      names(user_data) <- c("datetime", "rain")
+        dplyr::select(c("datetime","rainfall_value")) |>
+        rename(rain=rainfall_value)
       user_data
+      print(user_data)
     } else if (input$analysistype == 'Flow Analysis'){
       user_data <- user_data |>
         dplyr::select(c(input$date_column, input$flow_column))
@@ -375,6 +371,7 @@ server <- function(input, output) {
             cumsum = cumsum(rain),
             hours = lubridate::time_length(datetime - datetime[1], unit = "hour")
           )
+
         ggplot(cumulative_rain, aes(x = hours, y = cumsum)) +
           geom_line() + 
           labs(x = "Elapsed hours from the first rain tip", y = glue("Cumulative rainfall ({unit()})"), title = "Total cumulative rainfall")
@@ -413,15 +410,33 @@ server <- function(input, output) {
       ggplot(flow, aes(x = datetime, y = flow)) + geom_line() 
     }
     
-    })
+    }) |> bindEvent(input$choose_graph)
   
   output$cumulative_rain <- renderPlot({
-    plotInput()
-  }) |> bindEvent(input$choose_graph)
+    if (input$analysistype == 'Rainfall Analysis'){
+      plotInput() 
+    } else if (input$analysistype == 'Flow Analysis'){
+      plotInput()
+    } else {
+      plotInput()
+    }
+    
+  }) 
   
-  output$flow <- renderPlot({
-    plotInput_flow()
-  }) |> bindEvent(input$choose_graph)
+  # output$flow <- renderPlot({
+  #   plotInput_flow()
+  # }) |> bindEvent(input$choose_graph)
+  # 
+  
+  output$download_rainfall_template <- downloadHandler(
+    filename = function() {
+      paste("rainfall_template", ".xlsx", sep = "")
+    },
+    content = function(file) {
+      template_path <- "templates/rainfall_template.xlsx"
+      file.copy(template_path, file, overwrite = TRUE)
+    }
+  )
   
   
   output$download_demo_1min <- downloadHandler(
@@ -442,6 +457,16 @@ server <- function(input, output) {
     content = function(file) {
       data <- readxl::read_excel("demo_data/timeoftips.xlsx")
       writexl::write_xlsx(data, file)
+    }
+  )
+  
+  output$download_flow_template <- downloadHandler(
+    filename = function() {
+      paste("flow_template", ".xlsx", sep = "")
+    },
+    content = function(file) {
+      template_path <- "templates/flow_template.xlsx"
+      file.copy(template_path, file, overwrite = TRUE)
     }
   )
   
@@ -484,42 +509,6 @@ server <- function(input, output) {
     }
   )
   
-  
-  # observeEvent(statistics(),{
-  #   
-  #   if(input$analysistype == 'Rainfall Analysis'){
-  #     print("rain")
-  #     shinyjs::showElement("stats")
-  #     shinyjs::showElement("download_summary")
-  #     
-  #     shinyjs::showElement("cumulative_rain")
-  #     shinyjs::showElement("choose_graph")
-  #     shinyjs::showElement("download_plot")
-  #     
-  #   }
-  #   else if (input$analysistype == 'Flow Analysis'){
-  #     shinyjs::showElement("stats_flow")
-  #     shinyjs::showElement("download_summary_flow")
-  #     
-  #     shinyjs::showElement("flow")
-  #     shinyjs::showElement("choose_graph_flow")
-  #     shinyjs::showElement("download_plot_flow")
-  #     
-  #   } else {
-  #     shinyjs::showElement("stats")
-  #     shinyjs::showElement("download_summary")
-  #     shinyjs::showElement("stats_flow")
-  #     shinyjs::showElement("download_summary_flow")
-  #     
-  #     shinyjs::showElement("cumulative_rain")
-  #     shinyjs::showElement("choose_graph")
-  #     shinyjs::showElement("download_plot")
-  #     shinyjs::showElement("flow")
-  #     shinyjs::showElement("choose_graph_flow")
-  #     shinyjs::showElement("download_plot_flow")
-  #     
-  #   }
-  # })
   
 
 

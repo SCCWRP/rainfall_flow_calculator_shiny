@@ -1,6 +1,13 @@
 library(shinyjs)
 library(shiny)
 library(shinycssloaders)
+
+
+markdown_text <- httr::GET("https://raw.githubusercontent.com/SCCWRP/rainfall_flow_calculator_api/master/README.md") |>
+  httr::content()
+
+
+
 ui <- fluidPage(
   useShinyjs(),
   
@@ -19,7 +26,8 @@ ui <- fluidPage(
       radioButtons(
         "analysistype", 
         "Choose an option:",
-        choices = c("Rainfall Analysis", "Flow Analysis", "Both Rainfall and Flow Analysis")
+        #choices = c("Rainfall Analysis", "Flow Analysis", "Both Rainfall and Flow Analysis")
+        choices = c("Rainfall Analysis", "Flow Analysis")
       )
     ),
     column(
@@ -32,40 +40,49 @@ ui <- fluidPage(
     tabPanel(
       "Instructions",
       h3("Using this Application"),
-      "This application allows user to choose between 3 different analysis types.",
+      "Templates are provided below for each analysis type, and demo data are available below each template. Please do not make changes to the column names as well as the tab names. The datetime column represents the timestamps of the data, and the rainfall_value/flow_rate_value represents the values that are associated with those timestamps.",
       HTML("
       <ol>
         <li>
-              Rainfall Analysis: When a user uploads rainfall data, the application provides a summary statistics of rainfall, and a plot of cumulative rainfall"),
+              Rainfall Analysis: After a user downloads the rainfall template, they can copy-paste the rainfall data to it (either 1-min data or time of tips data are acceptable)"),
+              
                 HTML("<ul>"),
+                
+                HTML("<li>"),
+                downloadLink("download_rainfall_template", label = "Download rainfall template"), 
+                HTML("</li>"),
+                
                 HTML("<li>"),
                 downloadLink("download_demo_1min", label = "Download 1-min demo data"), 
                 HTML("</li>"),
+                
                 HTML("<li>"),
                 downloadLink("download_demo_tt", label = "Download time of tips demo data"), 
                 HTML("</li>"),
+                
                 HTML("</ul>"),
                 HTML("
         </li>
+        
         <li>
-              Flow Analysis: When a user uploads flow data, the application provides a summary statistics of flow"),
+              Flow Analysis: After a user downloads the flow template, they can copy-paste their data to the file according to the tab's names."), 
+                HTML("<b> Please note that if the data are not available for any of the tabs, please do not delete any tabs</b>"),
                 HTML("<ul>"),
+                
+                HTML("<li>"),
+                downloadLink("download_flow_template", label = "Download flow template"), 
+                HTML("</li>"),
+      
                 HTML("<li>"),
                 downloadLink("download_demo_flow", label = "Download flow demo data"), 
                 HTML("</li>"),
+      
                 HTML("</ul>"),
                 HTML("     
         </li>
+
+
         
-        <li>
-              Both Rainfall and Flow Analysis: When a user uploads both rainfall and flow data, the application provides the summary statistics of both rainfall and flow"),
-                HTML("<ul>"),
-                HTML("<li>"),
-                downloadLink("download_demo_rainfall_flow", label = "Download both rainfall and flow data in one file"), 
-                HTML("</li>"),
-                HTML("</ul>"),
-                HTML("         
-        </li>
         </li>
       </ol>
          "),
@@ -73,33 +90,27 @@ ui <- fluidPage(
       h3("Data Requirements"),
       HTML("The uploaded Excel spreadsheet must conform to the following requirements:
         <ul>
+          
           <li>
-            It must contain exactly two sheets, one for the flow rate measurement data, and one for the sample timestamps/pollutant measurement data.
+            Each tab must contain exactly two columns, one for the sample timestamps data, and one for the associated values. 
           </li>
+          
           <li>
-            The first sheet must have exactly two columns, one for the timestamps and one for the flow rate measurements.
+            The column's names and the tab's names must not be changed from the template.
           </li>
-          <li>
-            The first column of each sheet must be timestamps with both date and time in the 'mm/dd/yy  hh:mm:ss' format. The 'Datetime' columns in the provided template file are already in the correct format.
-          </li>
-          <li>
-            Any number of pollutant columns in the second sheet are supported. If you do not have pollutant data, delete the 'Pollutant' columns entirely before uploading the template.
-          </li>
-          <li>
-            The column headers are required and can be renamed as needed, but cannot be exclusively numeric characters [0-9]. The flow rate and pollutant column headers will be used for axis titles and can contain the units of the measurements, for example.
-          </li>
-          <li>
-            All flow rate and pollutant measurements must be greater than zero.
-          </li>
-          <li>
-            There may not be any missing values in the spreadsheet.
-          </li>
+          
         </ul>")#,
       # hr(),
       # h3("Technical Details"),
       # HTML("The hydrograph volume is calculated by a trapezoidal approximation, with partitions set at every data point. The aliquot volume values are allocated to each sample timestamp by using the area under the curve between the midpoint of the previous sample and the current sample and the current sample and the next sample. For example if we have samples 1, 2, and 3 at times 10, 14, and 26, then the area under the curve between times 12 and 20 will be allocated to sample 2, since the midpoint between 10 and 14 is 12, and the midpoint between 14 and 26 is 20.")
     ),
+    tabPanel(
+      "Methods",
+      markdown_text |>
+        commonmark::markdown_html() |>
+        HTML() |>
+        withMathJax()
+    ),
     id='full_page'
   )
 )
-  
