@@ -40,11 +40,14 @@ ui <- fluidPage(
     tabPanel(
       "Instructions",
       h3("Using this Application"),
-      "Templates are provided below for each analysis type, and demo data are available below each template. Please do not make changes to the column names as well as the tab names. The datetime column represents the timestamps of the data, and the rainfall_value/flow_rate_value represents the values that are associated with those timestamps.",
+      "Templates are provided below for each analysis type, and demo data are available below each template. 
+      The datetime column represents the timestamps, and the rain/flow column represents the values that are associated with those timestamps.",
+      HTML("<br>"),
+      HTML("<b>Please do not make changes to the column names or the tab names.</b>"),
       HTML("
       <ol>
         <li>
-              Rainfall Analysis: After a user downloads the rainfall template, they can copy-paste the rainfall data to it (either 1-min data or time of tips data are acceptable)"),
+              Rainfall Analysis: Rainfall data (either 1-min or time of tips data) should be copy-pasted from the user's datasheet to the downloaded template. Note that the rain gauge values should be placed in the rain column in the template"),
               
                 HTML("<ul>"),
                 
@@ -65,8 +68,13 @@ ui <- fluidPage(
         </li>
         
         <li>
-              Flow Analysis: After a user downloads the flow template, they can copy-paste their data to the file according to the tab's names."), 
-                HTML("<b> Please note that if the data are not available for any of the tabs, please do not delete any tabs</b>"),
+              Flow Analysis: Flow data should be copy-pasted from the user's datasheet to the 
+                     downloaded template. There are four flow types: inflow, inflow2, outflow and bypass.
+                     A user does not need to submit all four. 
+                     Any combination of the flow type is acceptable."), 
+                HTML("<br>"),
+                HTML("<b> Please note that if the data are not available for any of the tabs, 
+                     leave the sheet as it is.</b>"),
                 HTML("<ul>"),
                 
                 HTML("<li>"),

@@ -3,9 +3,20 @@ library(zip)
 library(writexl)
 library(glue)
 library(dplyr)
+library(shinyTime)
+library(readxl)
+library(lubridate)
+
+read_excel_allsheets <- function(filename, tibble = FALSE) {
+  sheets <- readxl::excel_sheets(filename)
+  x <- lapply(sheets, function(X) readxl::read_excel(filename, sheet = X))
+  if(!tibble) x <- lapply(x, as.data.frame)
+  names(x) <- sheets
+  x
+}
 
 
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   observe({
     if (input$analysistype == 'Rainfall Analysis') {
@@ -28,7 +39,6 @@ server <- function(input, output) {
               selected = "0.01 inch"
             ),
           ),
-
           column(
             4,
             br(),
@@ -53,18 +63,14 @@ server <- function(input, output) {
               multiple = FALSE,
               accept = ".xlsx"
             ),
-            selectInput(
-              inputId = "rainfall_resolution",
-              label = "Step 2: Choose the rainfall resolution",
-              choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
-              selected = "0.01 inch"
-            ),
           ),
           column(
             4,
             align = "left",
-            uiOutput("date_column"),
-            uiOutput("flow_column")
+            uiOutput("start_date_flow"),
+            timeInput(inputId = "start_time_flow", label = 'Input the start time'),
+            uiOutput("end_date_flow"),
+            timeInput(inputId = "end_time_flow", label = 'Input the end time')
           ),
           column(
             4,
@@ -115,11 +121,6 @@ server <- function(input, output) {
     }
   })
   
-  observe({
-    if(input$analysistype == 'Flow Analysis'){
-      updateSelectInput(inputId = "flow_column", label = "Step 4: Choose a column containing flow values")
-    }
-  })
   
   unit <- reactive({
     if (input$rainfall_resolution == 0.01){
@@ -153,28 +154,17 @@ server <- function(input, output) {
                 DT::dataTableOutput("stats") ,
                 br(),
                 downloadButton("download_summary", "Download Table") ,
-                br(),
-                br(),
-                br(),
-                br(),
-                hr(),
-                DT::dataTableOutput("stats_flow") ,
-                br(),
-                downloadButton("download_summary_flow", "Download Table") ,
+                textOutput("percent_change")
               ),
               column(
                 5,
                 align = "left",
                 br(),
                 br(),
-                plotOutput("cumulative_rain") ,
-                selectInput("choose_graph", "Choose An Event", choices = 1:nrow(statistics()), selected = 1) ,
+                plotOutput("rain_flow_plot") ,
+                uiOutput("choose_graph_ui") ,
                 downloadButton("download_plot", "Download Plot") ,
-                br(),
-                hr(),
-                plotOutput("flow") ,
-                selectInput("choose_graph_flow", "Choose An Event", choices = 1:nrow(statistics()), selected = 1) ,
-                downloadButton("download_plot_flow", "Download Plot") 
+
               )
             )
           ),
@@ -185,8 +175,20 @@ server <- function(input, output) {
     removeModal()
   }) 
   
-  output$date_column <- renderUI({
-    selectInput(inputId = "date_column", label = "Step 3: Choose a column containing datetime values", choices = "")
+  output$choose_graph_ui <- renderUI({
+    if (input$analysistype == 'Rainfall Analysis'){
+    selectInput(inputId = "choose_graph",label="",choices="")
+      } else {
+      selectInput(inputId = "choose_graph",label="",choices=as.character(statistics()$flow_type),multiple = TRUE,selected = as.character(statistics()$flow_type)[1])
+    }
+  }) |> bindEvent(input$submit)
+    
+  output$start_date_flow <- renderUI({
+    dateInput(inputId = "start_date_flow", label = "Step 2: Input the start of the hydrograph", value = NULL, min = NULL, max = NULL)
+  })
+  
+  output$end_date_flow <- renderUI({
+    dateInput(inputId = "end_date_flow", label = "Step 3: Input the end of the hydrograph", value = NULL, min = NULL, max = NULL)
   })
   
   output$rain_column <- renderUI({
@@ -197,10 +199,7 @@ server <- function(input, output) {
     selectInput(inputId = "flow_column", label = "Step 5: Choose a column containing flow values", choices = "")
   })
   
-  output$choose_graph <- renderUI({
-    selectInput(inputId = "choose_graph", label = "Choose Rain Event", choices = "")
-  }) |>
-    bindEvent(statistics())
+
   
   observe({
     updateSelectInput(inputId = "date_column", choices = readxl::read_excel(input$file$datapath) |> names())
@@ -218,35 +217,115 @@ server <- function(input, output) {
     bindEvent(input$file$datapath)
   
   
-  observeEvent(input$submit,{
-    updateSelectInput(inputId = "choose_graph", choices = append(as.character(1:nrow(statistics())), "All events"), selected = "All events")
-  }
-  )
+  observe({
+    if (input$analysistype == 'Rainfall Analysis') {
+      updateSelectInput(inputId = "choose_graph", label = "Choose a rain event:", choices = append(as.character(1:nrow(statistics())), "All events"), selected = "All events")
+    } else {
+      updateSelectInput(inputId = "choose_graph", label = "Choose a flow type:", choices = as.character(statistics()$flow_type)) 
+    }
+  }) |>
+    bindEvent(input$submit)
+  
+  observe({
+    updateSelectInput(inputId = "flow_column", choices = readxl::read_excel(input$file$datapath) |> names())
+  }) |>
+    bindEvent(input$file$datapath)
+  
+  observe({
+    if (input$analysistype == 'Flow Analysis'){
+      updateDateInput(
+        inputId = "start_date_flow",
+        value = min(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'inflow')$datetime)),
+        min = min(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'inflow')$datetime)),
+        max = max(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime))
+      )
+    }
+    
+  }) |>
+    bindEvent(input$file$datapath)
+  
+  observe({
+    if (input$analysistype == 'Flow Analysis'){
+      updateDateInput(
+        inputId = "end_date_flow", 
+        value = max(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)),
+        min = min(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'inflow')$datetime)),
+        max = max(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime))
+      )   
+      }
+
+  }) |>
+    bindEvent(input$file$datapath)
+  
+  observe({
+    if (input$analysistype == 'Flow Analysis'){
+      updateTimeInput(
+        session,
+        inputId = "start_time_flow", 
+        value = hms::as_hms(
+          format(
+            min(as.POSIXct(readxl::read_excel(input$file$datapath, sheet = 'inflow')$datetime)), format='%H:%M:%S'
+          )
+        )
+      )     
+    }
+
+  }) |>
+    bindEvent(input$file$datapath)
+  
+  observe({
+    if (input$analysistype == 'Flow Analysis'){
+      updateTimeInput(
+        session,
+        inputId = "end_time_flow", 
+        value = hms::as_hms(
+          format(
+            max(as.POSIXct(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)), format='%H:%M:%S'
+          )
+        )
+      ) 
+    }
+
+  }) |>
+    bindEvent(input$file$datapath)
+
 
   data_input <- reactive({
-    user_data <- readxl::read_excel(input$file$datapath)
+    
     if(input$analysistype == 'Rainfall Analysis'){
-      user_data <- user_data |>
-        dplyr::select(c("datetime","rainfall_value")) |>
-        rename(rain=rainfall_value)
-      user_data
-      print(user_data)
+      user_data <- readxl::read_excel(input$file$datapath)
+      user_data <-user_data |>
+        dplyr::select(c("datetime","rain"))
+        user_data
+    
     } else if (input$analysistype == 'Flow Analysis'){
-      user_data <- user_data |>
-        dplyr::select(c(input$date_column, input$flow_column))
-      names(user_data) <- c("datetime", "flow")
+
+      # start <- as.POSIXct(paste(input$start_date_flow, format(as.POSIXct(input$start_time_flow),format="%H:%M:%S"), sep = " ")))
+      # end <- as.POSIXct(paste(input$end_date_flow, format(as.POSIXct(input$end_time_flow),format="%H:%M:%S"), sep = " ")))
+      # 
+      user_data <- read_excel_allsheets(input$file$datapath)
       user_data
+    
     } else {
+      
       user_data <- user_data |>
         dplyr::select(c(input$date_column, input$rain_column, input$flow_column))
-      names(user_data) <- c("datetime", "rain", "flow")
-      user_data
+        names(user_data) <- c("datetime", "rain", "flow")
+        user_data
     }
   })
   
   payload <- reactive({
-    user_data <- data_input() |>
-      dplyr::arrange(datetime)
+    if (input$analysistype == 'Rainfall Analysis'){
+      
+      user_data <- data_input() %>% arrange(datetime)
+      user_data <- list(rain=user_data)
+      
+    } else {
+      user_data <- data_input() |>
+        lapply(function (df) df %>% arrange(datetime))
+    }
+
     user_data <- jsonlite::toJSON(user_data, dataframe = "columns", POSIXt = "ISO8601")
     user_data
   })
@@ -254,11 +333,14 @@ server <- function(input, output) {
   
   response <- reactive({
     body = payload()
-    
+
     if (input$analysistype == 'Rainfall Analysis'){
+
       res <- httr::POST("https://nexus.sccwrp.org/bmp_hydrology/api/rain", body = body, encode = "json", httr::content_type_json())
     } else if (input$analysistype == 'Flow Analysis'){
+
       res <- httr::POST("https://nexus.sccwrp.org/bmp_hydrology/api/flow", body = body, encode = "json", httr::content_type_json())
+
     } else {
       res <- httr::POST("https://nexus.sccwrp.org/bmp_hydrology/api/rainflow", body = body, encode = "json", httr::content_type_json())
     }
@@ -299,14 +381,42 @@ server <- function(input, output) {
           peak_10_min_rainfall_intensity
         )
     } else if (input$analysistype == 'Flow Analysis'){
-      response()$statistics |>
-        tibble::as_tibble() 
+      my_content <- response()$statistics
+      my_content <- lapply(
+        seq_along(my_content), function(i) if(names(my_content)[i] %in% c('inflow','inflow2','bypass','outflow') ){
+          my_content[[i]] %>% as_tibble() %>% tidyr::unnest()    %>%    
+            mutate(flow_type = names(my_content)[i]) %>% 
+            select(flow_type, start_time, peak_flow_rate, runoff_duration, runoff_volume) %>%
+            mutate(start_time = format(as.POSIXct(start_time), format = "%Y-%m-%d %H:%M:%S")) 
+        }
+        ) %>% 
+        dplyr::bind_rows() 
+        
     } else {
       response()$statistics |>
         tibble::as_tibble() 
     }
   }) |>
     bindEvent(input$submit)
+  
+  
+  
+  output$percent_change = renderText({
+    if (input$analysistype == 'Flow Analysis'){
+      result <- ""
+      print(as.character(response()$statistics['percent_change_volume']))
+        if (as.character(response()$statistics['percent_change_volume']) != 'NULL'){
+          pct_change_volume <- as.character(response()$statistics['percent_change_volume'][[1]])
+          result <- paste(result, glue("The percentage of change in volume is: {pct_change_volume}."), sep = " ")
+        }
+        if (as.character(response()$statistics['percent_change_flow_rate']) != 'NULL'){
+          pct_change_flow_rate <- as.character(response()$statistics['pct_change_flow_rate'][[1]])
+          result <- paste(result, glue("The percentage of change in flow rate is: {pct_change_flow_rate}"), sep = " ")
+        }
+      print(result)
+      result
+    }
+  })
   
   output$stats <- DT::renderDataTable({
     if (input$analysistype == 'Rainfall Analysis'){
@@ -348,12 +458,18 @@ server <- function(input, output) {
     } else if (input$analysistype == 'Flow Analysis'){
       data <- statistics()
       DT::datatable(
-        data,
+        data |> dplyr::rename(
+          `Type of flow`= flow_type,
+          `Storm Date`= start_time,
+          `Peak flow rate (volume/time)` = peak_flow_rate,
+          `Duration of runoff (minute)` = runoff_duration,
+          `Runoff volume` = runoff_volume
+        ),
         caption = htmltools::tags$caption(
           style = 'caption-side: top; text-align: center; color:black;  font-size:200% ;',
           'Statistics of the flow data'
         )
-      )
+      ) 
     } else {
       data <- statistics()
     }
@@ -403,8 +519,20 @@ server <- function(input, output) {
         
       }
     } else if (input$analysistype == 'Flow Analysis'){
-      flow <- data_input()
-      ggplot(flow, aes(x = datetime, y = flow)) + geom_line() 
+      
+      flow_df <- data_input()
+      
+      flow_df <- bind_rows(
+        lapply(
+          seq_along(flow_df), 
+          function(i) {
+            flow_df[[i]] %>% mutate(flow_type=names(flow_df)[i]  )
+          }
+        )
+      ) %>% filter(flow_type %in% input$choose_graph)
+      
+      ggplot(flow_df, aes(x = datetime, y = flow, colour = flow_type)) + geom_line() 
+
     } else {
       flow <- data_input()
       ggplot(flow, aes(x = datetime, y = flow)) + geom_line() 
@@ -412,7 +540,7 @@ server <- function(input, output) {
     
     }) |> bindEvent(input$choose_graph)
   
-  output$cumulative_rain <- renderPlot({
+  output$rain_flow_plot <- renderPlot({
     if (input$analysistype == 'Rainfall Analysis'){
       plotInput() 
     } else if (input$analysistype == 'Flow Analysis'){
@@ -475,8 +603,8 @@ server <- function(input, output) {
       paste("demo_data_flow", ".xlsx", sep = "")
     },
     content = function(file) {
-      data <- readxl::read_excel("demo_data/flowrate.xlsx")
-      writexl::write_xlsx(data, file)
+      template_path <- "demo_data/flowrate.xlsx"
+      file.copy(template_path, file, overwrite = TRUE)
     }
   )
   
