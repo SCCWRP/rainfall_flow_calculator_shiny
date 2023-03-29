@@ -174,13 +174,27 @@ server <- function(input, output, session) {
     }
     removeModal()
   }) 
+
   
   output$choose_graph_ui <- renderUI({
     print(input$analysistype)
     if (input$analysistype == 'Rainfall Analysis'){
-      selectInput(inputId = "choose_graph",label = "Choose a rain event:", choices = append(as.character(1:nrow(statistics())), "All events"), selected = "All events")
-      } else {
-      selectInput(inputId = "choose_graph",label = "Choose a flow type:", choices = as.character(statistics()$flow_type),multiple = TRUE,selected = as.character(statistics()$flow_type)[1])
+
+      selectInput(
+        inputId = "choose_graph", 
+        label = "Choose a rain event:", 
+        choices = append(as.character(1:nrow(statistics())), "All events"), 
+        selected = "All events"
+      )
+    } else {
+      selectInput(
+        inputId = "choose_graph", 
+        label = "Choose a flow type:", 
+        choices = as.character(statistics()$flow_type),
+        selected = as.character(statistics()$flow_type)[1],
+        multiple = TRUE
+      )
+
     }
   }) |> bindEvent(input$submit)
     
