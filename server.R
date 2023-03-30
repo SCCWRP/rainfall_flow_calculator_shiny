@@ -206,6 +206,7 @@ server <- function(input, output, session) {
     }
     removeModal()
   }) 
+  
   ranges <- reactiveValues(x = NULL, y = NULL)
   
   observeEvent(input$plot1_dblclick, {
@@ -382,7 +383,7 @@ server <- function(input, output, session) {
 
     user_data <- jsonlite::toJSON(user_data, dataframe = "columns", POSIXt = "ISO8601", auto_unbox = TRUE)
     user_data
-    
+   
     
   }) 
 
@@ -657,7 +658,7 @@ server <- function(input, output, session) {
       ggplot(flow, aes(x = datetime, y = flow)) + geom_line() 
     }
     
-    }) |> bindEvent(input$choose_graph) 
+    }) 
   
   
   output$rain_flow_plot <- renderPlot({
@@ -669,11 +670,12 @@ server <- function(input, output, session) {
       
       plotInput() +
         coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)
+    
     } else {
       plotInput()
     }
     
-  }) 
+  }) |> bindEvent(input$choose_graph, input$submit, input$plot1_dblclick) 
   
   
   output$download_rainfall_template <- downloadHandler(
