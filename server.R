@@ -69,8 +69,8 @@ server <- function(input, output, session) {
             selectInput(
               inputId = "flow_unit",
               label = "Step 2: Choose the flow units",
-              choices = c("l/s","g/m","ft3/s"),
-              selected = "l/s"
+              choices = c("L/s","g/m","ft3/s"),
+              selected = "L/s"
             ),
           ),
           column(
@@ -546,7 +546,7 @@ server <- function(input, output, session) {
         data |> 
           mutate(start_time = format(as.POSIXct(start_time), tz = "America/Los_Angeles")) |>
           #select(flow_type,start_time,peak_flow_rate,runoff_duration) |>
-          select(flow_type, peak_flow_rate, runoff_duration) |>
+          select(flow_type, peak_flow_rate, runoff_duration, runoff_volume) |>
           
           setNames(
             c(
