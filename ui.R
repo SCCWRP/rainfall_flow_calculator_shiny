@@ -11,11 +11,36 @@ markdown_text <- httr::GET("https://raw.githubusercontent.com/SCCWRP/rainfall_fl
 ui <- fluidPage(
   useShinyjs(),
   
+  shinyjs::extendShinyjs(
+    text = "shinyjs.refresh_page = function() { location.reload(); }", 
+    functions = "refresh_page"
+  ),
+  tags$head(
+    tags$style(
+      paste0(
+      'body {font-size: ', 20, 'px}
+      .action-button {font-size: ', 20, 'px}
+      #volume1 {font-weight: bold}
+      #volume2 {font-weight: bold}
+      #start_time {color: Gray}
+      #end_time {color: Gray}'
+      )
+    )
+  ),
+  tags$div(
+    HTML(
+      "<script type='text/x-mathjax-config' >
+         MathJax.Hub.Config({
+         tex2jax: {inlineMath: [['$','$']]}
+         });
+      </script >
+      "
+    )
+  ),
   
   # Application title
   titlePanel("BMP Hydrology"),
 
-  
   fluidRow(
     column(
       1,
@@ -28,7 +53,8 @@ ui <- fluidPage(
         "Choose an option:",
         #choices = c("Rainfall Analysis", "Flow Analysis", "Both Rainfall and Flow Analysis")
         choices = c("Rainfall Analysis", "Flow Analysis")
-      )
+      ),
+      actionButton("refresh", "Reset All", width = '200px')
     ),
     column(
       7,
@@ -99,6 +125,10 @@ ui <- fluidPage(
       h3("Data Requirements"),
       HTML("The uploaded Excel spreadsheet must conform to the following requirements:
         <ul>
+          
+          <li>
+            The timestamp should be in 24-hour format (mm/dd/yy hh:mm:ss) 
+          </li>
           
           <li>
             Each tab must contain exactly two columns, one for the sample timestamps data, and one for the associated values. 
