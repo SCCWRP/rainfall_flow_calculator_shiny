@@ -752,10 +752,10 @@ server <- function(input, output, session) {
   
   output$download_plot <- downloadHandler(
     filename = function() {
-      paste("cumulative_rain", ".png", sep = "")
+      paste("downloaded_plot", ".png", sep = "")
     },
     content = function(file) {
-      ggsave(file, plot = plotInput(), device = "png")
+      ggsave(file, plot = plotInput() + coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE), device = "png")
     }
   )
   
