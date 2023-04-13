@@ -1,5 +1,5 @@
 library(shiny)
-
+library(shinyTime)
 
 flowUI <- function(id) {
   
@@ -17,7 +17,11 @@ flowUI <- function(id) {
       selectInput(
         inputId = "flow_unit",
         label = "Step 2: Choose the flow units",
-        choices = c("L/s","g/m","ft3/s"),
+        choices = c(
+          "L/s" = "L/s",
+          "g/min (gpm)" = "g/m",
+          "ft3/s (cfs)" = "ft3/s"
+        ),
         selected = "L/s"
       ),
     ),

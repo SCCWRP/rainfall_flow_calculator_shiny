@@ -1,4 +1,4 @@
-
+library(shinyjs)
 
 
 markdown_text <- httr::GET("https://raw.githubusercontent.com/SCCWRP/rainfall_flow_calculator_api/master/README.md") |>
@@ -129,7 +129,10 @@ ui <- fluidPage(
       HTML("The uploaded Excel spreadsheet must conform to the following requirements:
         <ul>
           <li>
-            The timestamp should be in 24-hour format (mm/dd/yy hh:mm:ss) 
+            Flow must be reported in units of L/s, gpm, or cfs. 
+          </li>
+          <li>
+            The timestamp should be in 24-hour format (mm/dd/yy hh:mm:ss). 
           </li>
           <li>
             Each tab must contain exactly two columns, one for the sample timestamps data, 

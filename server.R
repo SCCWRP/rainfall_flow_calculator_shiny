@@ -1,6 +1,23 @@
 source("rainfall_calculator/ui_rainfall.R")
 source("flow_calculator/ui_flow.R")
-
+library(shinyjs)
+library(shiny)
+library(shinycssloaders)
+library(DT)
+library(jsonlite)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(tidyverse)
+library(ggplot2)
+library(zip)
+library(writexl)
+library(glue)
+library(shinyTime)
+library(readxl)
+library(lubridate)
+library(stringr)
+library(shinyWidgets)
 
 read_excel_allsheets <- function(filename, tibble = FALSE) {
   sheets <- readxl::excel_sheets(filename)
@@ -34,9 +51,11 @@ server <- function(input, output, session) {
 
   flow_time_unit <- reactive({
     if (input$analysistype == 'flow'){
+      print(strsplit(input$flow_unit,"/")[[1]][2])
       out <- strsplit(input$flow_unit,"/")[[1]][2]
+      
     }
-  })
+  }) |> bindEvent(input$flow_unit)
   
   ranges <- reactiveValues(x = NULL, y = NULL)
   ##
