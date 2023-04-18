@@ -16,7 +16,7 @@ flowUI <- function(id) {
       ),
       selectInput(
         inputId = "flow_unit",
-        label = "Step 2: Choose the flow units",
+        label = "Step 2: Choose the flow units of the submitted data",
         choices = c(
           "L/s" = "L/s",
           "g/min (gpm)" = "g/m",
@@ -57,7 +57,7 @@ flowUI <- function(id) {
       br(),
       br(),
       align = "left",
-      shinyWidgets::actionBttn("submit", "Submit", width = '200px')
+      shinyjs::disabled(shinyWidgets::actionBttn("submit", "Submit", width = '200px'))
     )
   )
 }

@@ -1,7 +1,9 @@
 source("rainfall_calculator/ui_rainfall.R")
 source("flow_calculator/ui_flow.R")
+source("file_validation/file_validator.R")
 library(shinyjs)
 library(shiny)
+library(shinyvalidate)
 library(shinycssloaders)
 library(DT)
 library(jsonlite)
@@ -29,6 +31,61 @@ read_excel_allsheets <- function(filename, tibble = FALSE) {
 
 
 server <- function(input, output, session) {
+  rainfall_file_validator <- shinyvalidate::InputValidator$new()
+  rainfall_file_validator$add_rule("file", function(file) is_correct_filetype(file))
+  
+  rainfall_file_validator$add_rule("file", function(file) has_four_sheets(file))
+  
+  rainfall_file_validator$add_rule("file", function(file) has_two_columns(file))
+  
+  rainfall_file_validator$add_rule("file", function(file) has_headers(file))
+  
+  rainfall_file_validator$add_rule("file", function(file) has_correct_date_format(file))
+
+  rainfall_file_validator$add_rule("file", function(file) has_correct_measurement_format(file))
+  
+  rainfall_file_validator$add_rule("file", function(file) has_no_missing_values(file))
+  
+  rainfall_file_validator$add_rule("file", function(file) has_no_negative_values(file))
+  
+
+  flow_file_validator <- shinyvalidate::InputValidator$new()
+  
+  flow_file_validator$add_rule("file", function(file) is_correct_filetype(file))
+  
+  flow_file_validator$add_rule("file", function(file) has_four_sheets(file))
+  
+  flow_file_validator$add_rule("file", function(file) has_two_columns(file))
+  
+  flow_file_validator$add_rule("file", function(file) has_headers(file))
+  
+  flow_file_validator$add_rule("file", function(file) has_correct_date_format(file))
+
+  flow_file_validator$add_rule("file", function(file) has_correct_measurement_format(file))
+  
+  flow_file_validator$add_rule("file", function(file) has_no_missing_values(file))
+  
+  flow_file_validator$add_rule("file", function(file) has_no_negative_values(file))
+  
+  flow_file_validator$add_rule("file", function(file) has_valid_outflow_time(file))
+  
+
+  
+  observe({
+    if(input$analysistype == "rainfall") {
+      rainfall_file_validator$enable()
+      flow_file_validator$disable()
+      
+      shinyjs::toggleState("submit", rainfall_file_validator$is_valid())
+    }
+    else if (input$analysistype == "flow") {
+      rainfall_file_validator$disable()
+      flow_file_validator$enable()
+      
+      shinyjs::toggleState("submit", flow_file_validator$is_valid())
+    }
+  }) |>
+    bindEvent(input$file)
   
   # Define reactiveValues
   tabs_list <- reactiveValues(data = list("Result" = NULL))
@@ -170,7 +227,7 @@ server <- function(input, output, session) {
       )
     }
 
-  }) |> bindEvent(input$file$datapath)
+  }) |> bindEvent(req(flow_file_validator$is_valid()))
 
   observe({
     if (input$analysistype == 'flow'){
@@ -181,7 +238,7 @@ server <- function(input, output, session) {
         max = max(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime))
       )
     }
-  }) |> bindEvent(input$file$datapath)
+  }) |> bindEvent(req(flow_file_validator$is_valid()))
 
   observe({
     if (input$analysistype == 'flow'){
@@ -195,7 +252,7 @@ server <- function(input, output, session) {
         )
       )
     }
-  }) |> bindEvent(input$file$datapath)
+  }) |> bindEvent(req(flow_file_validator$is_valid()))
 
   observe({
     if (input$analysistype == 'flow'){
@@ -209,7 +266,7 @@ server <- function(input, output, session) {
         )
       )
     }
-  }) |> bindEvent(input$file$datapath)
+  }) |> bindEvent(req(flow_file_validator$is_valid()))
 
   observe({
     updateActionButton(session, inputId = "submit", label = "Re-submit")

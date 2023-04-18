@@ -28,7 +28,7 @@ rainfallUI <- function(id) {
       br(),
       br(),
       align = "left",
-      shinyWidgets::actionBttn("submit", "Submit", width = '200px'),
+      shinyjs::disabled(shinyWidgets::actionBttn("submit", "Submit", width = '200px'))
     )
   )
 }
