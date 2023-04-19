@@ -101,12 +101,11 @@ ui <- fluidPage(
         <li>
           Flow Analysis: 
             Flow data should be copy-pasted from the user's datasheet to the 
-            downloaded template. Four available flow types are inflow 1, inflow 2, outflow and bypass.
-            A user does not need to submit all four types, any combination of the flow type is acceptable."), 
+            downloaded data template. Up to four flows can be accomodated for analysis. The available flow types are inflow 1, inflow 2, outflow and bypass. Refer to the Methods tab for an illustration of the possible flow type configurations.
+            A user does not need to submit all four types, any combination of the flow types is acceptable."), 
             
             HTML("<br>"),
-            HTML("<b> Please note that if the data are not available for any of the tabs, 
-                 leave the sheet as it is.</b>"),
+            HTML("<b> If any of the data types are not applicable, leave the tab blank (as is).</b>"),
             
             HTML("<ul>"),
               
@@ -135,11 +134,11 @@ ui <- fluidPage(
             The timestamp should be in 24-hour format (mm/dd/yy hh:mm:ss). 
           </li>
           <li>
-            Each tab must contain exactly two columns, one for the sample timestamps data, 
+            Each tab must contain exactly two columns, one for the sample timestamps data 
             and one for the associated values. 
           </li>
           <li>
-            The column's names and the tab's names must not be changed from the template.
+            The column names and the tab names must not be changed from the template.
           </li>
         </ul>")
     ),
