@@ -72,6 +72,10 @@ server <- function(input, output, session) {
   flow_file_validator$add_rule("file", function(file) has_valid_outflow_time(file))
   
 
+  observe({
+    shinyjs::disable("analysistype")
+  }) |>
+    bindEvent(input$submit)
   
   observe({
     if(input$analysistype == "rainfall") {
@@ -81,7 +85,7 @@ server <- function(input, output, session) {
       shinyjs::toggleState("submit", rainfall_file_validator$is_valid())
     }
     else if (input$analysistype == "flow") {
-      showModal(modalDialog("Reading file...Please don't close this window. It will close automatically when the file is loaded"))
+      showModal(modalDialog("Reading file... This window will close automatically when the file is loaded.", footer = NULL))
       
       rainfall_file_validator$disable()
       flow_file_validator$enable()
