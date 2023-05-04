@@ -34,7 +34,7 @@ server <- function(input, output, session) {
   rainfall_file_validator <- shinyvalidate::InputValidator$new()
   rainfall_file_validator$add_rule("file", function(file) is_correct_filetype(file))
   
-  rainfall_file_validator$add_rule("file", function(file) has_four_sheets(file))
+  #rainfall_file_validator$add_rule("file", function(file) has_four_sheets(file))
   
   rainfall_file_validator$add_rule("file", function(file) has_two_columns(file))
   
@@ -46,7 +46,7 @@ server <- function(input, output, session) {
   
   rainfall_file_validator$add_rule("file", function(file) has_no_missing_values(file))
   
-  rainfall_file_validator$add_rule("file", function(file) has_no_negative_values(file))
+  #rainfall_file_validator$add_rule("file", function(file) has_no_negative_values(file))
   
 
   flow_file_validator <- shinyvalidate::InputValidator$new()
@@ -79,6 +79,8 @@ server <- function(input, output, session) {
       shinyjs::toggleState("submit", rainfall_file_validator$is_valid())
     }
     else if (input$analysistype == "flow") {
+      showModal(modalDialog("Reading file...Please don't close this window. It will close automatically when the file is loaded"))
+      
       rainfall_file_validator$disable()
       flow_file_validator$enable()
       
@@ -219,6 +221,7 @@ server <- function(input, output, session) {
 
   observe({
     if (input$analysistype == 'flow'){
+      
       updateDateInput(
         inputId = "start_date_flow",
         value = min(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime)),
@@ -265,7 +268,9 @@ server <- function(input, output, session) {
           )
         )
       )
+      
     }
+    removeModal()
   }) |> bindEvent(req(flow_file_validator$is_valid()))
 
   observe({
