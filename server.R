@@ -31,13 +31,14 @@ read_excel_allsheets <- function(filename, tibble = FALSE) {
 
 
 server <- function(input, output, session) {
+  
   rainfall_file_validator <- shinyvalidate::InputValidator$new()
   rainfall_file_validator$add_rule("file", function(file) is_correct_filetype(file))
   
   #rainfall_file_validator$add_rule("file", function(file) has_four_sheets(file))
-  
-  rainfall_file_validator$add_rule("file", function(file) has_two_columns(file))
-  
+  observe({
+    rainfall_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
+  })  
   rainfall_file_validator$add_rule("file", function(file) has_headers(file))
   
   rainfall_file_validator$add_rule("file", function(file) has_correct_date_format(file))
@@ -55,8 +56,9 @@ server <- function(input, output, session) {
   
   flow_file_validator$add_rule("file", function(file) has_four_sheets(file))
   
-  flow_file_validator$add_rule("file", function(file) has_two_columns(file))
-  
+  observe({
+    flow_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
+  })
   flow_file_validator$add_rule("file", function(file) has_headers(file))
   
   flow_file_validator$add_rule("file", function(file) has_correct_date_format(file))

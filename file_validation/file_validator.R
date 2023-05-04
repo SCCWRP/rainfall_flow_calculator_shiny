@@ -16,7 +16,7 @@ has_four_sheets <- function(file) {
   }
 }
 
-has_two_columns <- function(file) {
+has_two_columns <- function(file, analysis_type) {
   sheets <- readxl::excel_sheets(file$datapath)
   tmp <- data.frame(sheet = sheets, rows = NA, cols = NA)
   
@@ -30,7 +30,7 @@ has_two_columns <- function(file) {
     return(NULL)
   }
   else {
-    return(glue::glue("Incorrect number of columns in sheet(s) {paste0(tmp$sheet[tmp$valid == FALSE], collapse = ', ')}. Sheet should have exactly 2 columns: datetime and flow measurements."))
+      return(glue::glue("Incorrect number of columns in sheet(s) {paste0(tmp$sheet[tmp$valid == FALSE], collapse = ', ')}. Sheet should have exactly 2 columns: datetime and {analysis_type} measurements."))
   }
 }
 
