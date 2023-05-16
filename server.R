@@ -116,7 +116,6 @@ server <- function(input, output, session) {
 
   flow_time_unit <- reactive({
     if (input$analysistype == 'flow'){
-      print(strsplit(input$flow_unit,"/")[[1]][2])
       out <- strsplit(input$flow_unit,"/")[[1]][2]
       
     }
@@ -187,15 +186,10 @@ server <- function(input, output, session) {
 
 
   observeEvent(input$plot1_dblclick, {
-    print("dblclick")
-    print(ranges)
     brush <- input$plot1_brush
     if (!is.null(brush)) {
-      print(brush$xmin)
-      print(brush$xmax)
-
-      ranges$x <- c(brush$xmin, brush$xmax)
-      ranges$y <- c(brush$ymin, brush$ymax)
+      ranges$x <- c(as.POSIXct(brush$xmin, origin = "1970-01-01"), as.POSIXct(brush$xmax, origin = "1970-01-01"))
+      ranges$y <- c(as.POSIXct(brush$ymin, origin = "1970-01-01"), as.POSIXct(brush$ymax, origin = "1970-01-01"))
 
     } else {
       ranges$x <- NULL
@@ -561,18 +555,20 @@ server <- function(input, output, session) {
       ) %>% filter(flow_type %in% input$choose_graph) %>%
         mutate(hours = lubridate::time_length(datetime - datetime[1], unit = "minute"))
 
-      ggplot(flow_df, aes(x = hours, y = flow, colour = flow_type)) +
+      ggplot(flow_df, aes(x = datetime, y = flow, colour = flow_type)) +
       geom_line() +
       ggtitle("Hydrograph") +
+      scale_x_datetime(breaks = "6 hours", date_labels = "%Y-%m-%d %H:%M:%S") + 
       theme(
         axis.text=element_text(size=18),
         axis.title=element_text(size=18,face="bold"),
         legend.title=element_text(size=18),
         legend.text=element_text(size=18),
-        plot.title = element_text(size = 18, face = "bold")
+        plot.title = element_text(size = 18, face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1)
       ) +
       labs(
-        x=glue("Elapsed time from the start time ({flow_time_unit()})"),
+        x=glue("Datetime"),
         y=glue("Flow rate ({flow_volume_unit()}/{flow_time_unit()})")
       )
 
