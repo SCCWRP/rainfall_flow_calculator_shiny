@@ -5,8 +5,9 @@ account: sccwrp
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 8536847
-bundleId: 7175451
+bundleId: 7226950
 url: https://sccwrp.shinyapps.io/rainfall_flow_analysis/
-when: 1683230612.54465
-lastSyncTime: 1683230612.54466
-
+when: 1684282513.13106
+lastSyncTime: 1684282513.13107
+asMultiple: FALSE
+asStatic: FALSE

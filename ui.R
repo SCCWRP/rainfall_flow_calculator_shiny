@@ -60,6 +60,21 @@ ui <- fluidPage(
       7,
       uiOutput("user_input")
       #rainfallflowUI("rainfall-flow-ui")
+    ),
+    column(
+      2,
+      shinyWidgets::actionBttn(
+        "feedback", 
+        "Feedback Form", 
+        width = '250px',
+        onclick ="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=PfKopOEaHEuZAuqhUwKBkLfF7RbFiCdKlqnmjECrBFxUMTBTVFpTSlcxM1VJSkM3NUdQQTdBSU5ENi4u', '_blank')"
+      ),
+      shinyWidgets::actionBttn(
+        "apidoc", 
+        "API Documentation", 
+        width = '250px',
+        onclick ="window.open('https://nexus.sccwrp.org/bmp_hydrology/api/docs', '_blank')"
+      ),
     )
   ),
   br(),
@@ -149,6 +164,17 @@ ui <- fluidPage(
         HTML() |>
         withMathJax()
     ),
+    tabPanel(
+      "Contact Us",
+      br(),
+      HTML(
+        '
+        If you have any questions, please contact us at
+          <a href="mailto:stormwater@sccwrp.org?subject=Flow-Weighting and Compositing Calculator Question">stormwater@sccwrp.org</a>.
+        '
+      )
+    ),
+
     id='full_page'
   )
 )

@@ -116,6 +116,7 @@ server <- function(input, output, session) {
 
   flow_time_unit <- reactive({
     if (input$analysistype == 'flow'){
+
       out <- strsplit(input$flow_unit,"/")[[1]][2]
       
     }
@@ -138,7 +139,7 @@ server <- function(input, output, session) {
   }) |> bindEvent(input$analysistype)
   
   observe({
-    showModal(modalDialog("Loading", footer=NULL))
+    showModal(modalDialog("Calculating...", footer=NULL))
   }) |> bindEvent(input$submit)
   
   observe({
@@ -155,6 +156,8 @@ server <- function(input, output, session) {
               DT::dataTableOutput("stats") ,
               br(),
               downloadButton("download_summary", "Download Table") ,
+              downloadButton("download_summary_smc", "Download Table in SMC Format") ,
+              
               textOutput("percent_change")
             ),
             column(
@@ -177,6 +180,8 @@ server <- function(input, output, session) {
             )
           )
         ),
+        target = "Methods",
+        position = "after",
         select = TRUE
       )
       tabs_list[["Result"]] = "Result"
@@ -336,6 +341,9 @@ server <- function(input, output, session) {
 
 
   statistics <- reactive({
+    print("response")
+    print(response())
+    
     if (input$analysistype == 'rainfall'){
       response()$statistics |>
         tibble::as_tibble() |>
@@ -346,7 +354,9 @@ server <- function(input, output, session) {
             total_rainfall,
             avg_rainfall_intensity,
             peak_5_min_rainfall_intensity,
-            peak_10_min_rainfall_intensity
+            peak_10_min_rainfall_intensity,
+            peak_60_min_rainfall_intensity,
+            antecedent_dry_period
           )
         ) |>
         dplyr::arrange(first_rain) |>
@@ -362,7 +372,9 @@ server <- function(input, output, session) {
           total_rainfall,
           avg_rainfall_intensity,
           peak_5_min_rainfall_intensity,
-          peak_10_min_rainfall_intensity
+          peak_10_min_rainfall_intensity,
+          antecedent_dry_period,
+          peak_60_min_rainfall_intensity
         )
     } else if (input$analysistype == 'flow'){
       my_content <- response()$statistics
@@ -373,10 +385,16 @@ server <- function(input, output, session) {
               flow_type = names(my_content)[i],
               runoff_duration = round(runoff_duration, 1),
               peak_flow_rate = round(peak_flow_rate, 1),
-              runoff_volume = round(runoff_volume, 1)
+              runoff_volume = round(runoff_volume, 1),
+              
+              
             ) %>%
-            select(flow_type, start_time, peak_flow_rate, runoff_duration, runoff_volume) %>%
-            mutate(start_time = stringr::str_replace(start_time,"T"," "))
+            select(flow_type, start_time, peak_flow_rate, runoff_duration, runoff_volume, start_time, end_time) %>%
+            mutate(
+              start_time = stringr::str_replace(start_time,"T"," "),
+              end_time = stringr::str_replace(end_time,"T"," "),
+              
+            )
 
         }
         ) %>%
@@ -669,6 +687,83 @@ server <- function(input, output, session) {
     }
   )
 
+  output$download_summary_smc <- downloadHandler(
+    filename = function() {
+      paste(glue("summary_table_smc_format_{input$analysistype}"), ".csv", sep = "")
+    },
+    content = function(file) {
+      df <- statistics()
+      print(colnames(df) )
+      if (input$analysistype == 'rainfall'){
+        
+        if (input$rainfall_resolution == 0.1){
+          totaldepthunits <- 'mm'
+          onehourpeakrateunit <- 'mm/hr'
+        } else {
+          totaldepthunits <- 'inch'
+          onehourpeakrateunit <- 'inch/hr'
+        }
+        df <- df %>% mutate(
+          eventid = event,
+          startdate = as.Date(first_rain),
+          starttime = format(first_rain, "%H:%M:%S"),
+          enddate = as.Date(last_rain),
+          endtime = format(df$last_rain, "%H:%M:%S"),
+          totaldepth = total_rainfall, 
+          totaldepthunits = totaldepthunits,
+          onehourpeakrate = peak_60_min_rainfall_intensity,
+          onehourpeakrateunit = onehourpeakrateunit,
+          antecedentdryperiod = antecedent_dry_period,
+        ) %>% select(
+          eventid, 
+          startdate, 
+          starttime, 
+          enddate, 
+          endtime, 
+          totaldepth, 
+          totaldepthunits, 
+          onehourpeakrate, 
+          onehourpeakrateunit, 
+          antecedentdryperiod
+        ) %>% rename(
+          antecedentdryperiod_days = antecedentdryperiod
+        )
+      } else if (input$analysistype == 'flow'){
+        print(df)
+        df <- df %>% mutate(
+          start_time = as.POSIXct(start_time, format = "%Y-%m-%d %H:%M:%S"),
+          end_time = as.POSIXct(end_time, format = "%Y-%m-%d %H:%M:%S")
+        ) %>% mutate(
+          monitoringstation = flow_type,
+          datestart = as.Date(start_time),
+          timestart = format(start_time, "%H:%M:%S"),
+          dateend = as.Date(end_time),
+          timeend = format(end_time, "%H:%M:%S"),
+          volumetotal = runoff_volume , 
+          volumeunits = glue("{flow_volume_unit()}"),
+          peakflowrate = peak_flow_rate,
+          peakflowunits = glue("{flow_volume_unit()}/{flow_time_unit()}")
+        ) %>% select(
+          monitoringstation, 
+          datestart, 
+          timestart, 
+          dateend, 
+          timeend, 
+          volumetotal, 
+          volumeunits, 
+          peakflowrate, 
+          peakflowunits
+        )  %>% mutate(
+          peakflowunits = gsub("L/s", "lps", peakflowunits)
+        )
+        
+      }
+
+      write.csv(df, file, row.names = FALSE)
+    }
+  )
+  
+  
 
   output$download_plot <- downloadHandler(
     filename = function() {
