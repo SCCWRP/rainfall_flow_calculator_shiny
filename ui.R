@@ -82,32 +82,32 @@ ui <- fluidPage(
     tabPanel(
       "Instructions",
       h3("Using this Application"),
-      "The following templates have been provided for each analysis type, with corresponding demo data available beneath 
-      each template. The datetime column is used to denote the timestamps, while the rain/flow column is used to indicate 
-      the associated values.",
+      "The following packages have been provided for each analysis type. 
+      Each package (.zip file) should have a README file, a template (.xlsx file) and a folder for demo data.
+      ",
       HTML("<br>"),
-      HTML("<b>It is required that the column names and tab names remain unchanged.</b>"),
+      HTML("<b>It is required that the column names and tab names in the templates remain unchanged.</b>"),
       HTML("
       <ol>
         <li>
           Rainfall Analysis: 
             The user is advised to copy and paste the rainfall data, whether it is in the form of 1-minute or time-of-tips data, 
-            into the downloaded template. 
+            into the provided template. 
             It is important to note that the rain gauge values must be entered into the designated rain column within the template."),
           
           HTML("<ul>"),
           
           HTML("<li>"),
-          downloadLink("download_rainfall_template", label = "Download rainfall template"), 
+          downloadLink("download_rainfall_template", label = "Download rainfall package"), 
           HTML("</li>"),
           
-          HTML("<li>"),
-          downloadLink("download_demo_1min", label = "Download 1-min demo data"), 
-          HTML("</li>"),
-          
-          HTML("<li>"),
-          downloadLink("download_demo_tt", label = "Download time of tips demo data"), 
-          HTML("</li>"),
+          # HTML("<li>"),
+          # downloadLink("download_demo_1min", label = "Download 1-min demo data"), 
+          # HTML("</li>"),
+          # 
+          # HTML("<li>"),
+          # downloadLink("download_demo_tt", label = "Download time of tips demo data"), 
+          # HTML("</li>"),
           
           HTML("</ul>"),
           HTML("
@@ -116,7 +116,7 @@ ui <- fluidPage(
         <li>
           Flow Analysis: 
             Flow data should be copy-pasted from the user's datasheet to the 
-            downloaded data template. Up to four flows can be accomodated for analysis. The available flow types are inflow 1, inflow 2, outflow and bypass. Refer to the Methods tab for an illustration of the possible flow type configurations.
+            provided data template. Up to four flows can be accomodated for analysis. The available flow types are inflow 1, inflow 2, outflow and bypass. Refer to the Methods tab for an illustration of the possible flow type configurations.
             A user does not need to submit all four types, any combination of the flow types is acceptable."), 
             
             HTML("<br>"),
@@ -125,12 +125,12 @@ ui <- fluidPage(
             HTML("<ul>"),
               
               HTML("<li>"),
-              downloadLink("download_flow_template", label = "Download flow template"), 
+              downloadLink("download_flow_template", label = "Download flow package"), 
               HTML("</li>"),
               
-              HTML("<li>"),
-              downloadLink("download_demo_flow", label = "Download flow demo data"), 
-              HTML("</li>"),
+              # HTML("<li>"),
+              # downloadLink("download_demo_flow", label = "Download flow demo data"), 
+              # HTML("</li>"),
             
             HTML("</ul>"),
             HTML("     

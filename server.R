@@ -411,7 +411,7 @@ server <- function(input, output, session) {
   output$stats <- DT::renderDataTable({
     if (input$analysistype == 'rainfall'){
       data <- statistics() |>
-        dplyr::select(-last_rain) |>
+        dplyr::select(-last_rain, -antecedent_dry_period, -peak_60_min_rainfall_intensity) |>
         dplyr::mutate(
           first_rain = format(as.POSIXct(first_rain), format = "%Y-%m-%d %H:%M:%S"),
           avg_rainfall_intensity = round(avg_rainfall_intensity, 2),
@@ -619,10 +619,10 @@ server <- function(input, output, session) {
 
   output$download_rainfall_template <- downloadHandler(
     filename = function() {
-      paste("rainfall_template", ".xlsx", sep = "")
+      paste("rainfall_package", ".zip", sep = "")
     },
     content = function(file) {
-      template_path <- "templates/rainfall_template.xlsx"
+      template_path <- "export/rainfall_package.zip"
       file.copy(template_path, file, overwrite = TRUE)
     }
   )
@@ -651,10 +651,10 @@ server <- function(input, output, session) {
 
   output$download_flow_template <- downloadHandler(
     filename = function() {
-      paste("flow_template", ".xlsx", sep = "")
+      paste("flow_package", ".zip", sep = "")
     },
     content = function(file) {
-      template_path <- "templates/flow_template.xlsx"
+      template_path <- "export/flow_package.zip"
       file.copy(template_path, file, overwrite = TRUE)
     }
   )
