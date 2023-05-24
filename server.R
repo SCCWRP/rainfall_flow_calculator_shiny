@@ -36,9 +36,9 @@ server <- function(input, output, session) {
   rainfall_file_validator$add_rule("file", function(file) is_correct_filetype(file))
   
   #rainfall_file_validator$add_rule("file", function(file) has_four_sheets(file))
-  observe({
-    rainfall_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
-  })  
+  # observe({
+  #   rainfall_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
+  # })  
   rainfall_file_validator$add_rule("file", function(file) has_headers(file))
   
   rainfall_file_validator$add_rule("file", function(file) has_correct_date_format(file))
@@ -56,9 +56,9 @@ server <- function(input, output, session) {
   
   flow_file_validator$add_rule("file", function(file) has_four_sheets(file))
   
-  observe({
-    flow_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
-  })
+  # observe({
+  #   flow_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
+  # })
   flow_file_validator$add_rule("file", function(file) has_headers(file))
   
   flow_file_validator$add_rule("file", function(file) has_correct_date_format(file))
@@ -69,7 +69,7 @@ server <- function(input, output, session) {
   
   flow_file_validator$add_rule("file", function(file) has_no_negative_values(file))
   
-  flow_file_validator$add_rule("file", function(file) has_valid_outflow_time(file))
+  #flow_file_validator$add_rule("file", function(file) has_valid_outflow_time(file))
   
 
   observe({
@@ -297,6 +297,7 @@ server <- function(input, output, session) {
       end <- as.POSIXct(paste(input$end_date_flow, format(as.POSIXct(input$end_time_flow),format="%H:%M:%S"), sep = " "))
 
       user_data <- read_excel_allsheets(input$file$datapath)
+      user_data <- Filter(function(df) nrow(df) > 0, user_data)
       user_data <- lapply(user_data, function (df) df %>% filter(between(datetime, start, end)))
 
 
