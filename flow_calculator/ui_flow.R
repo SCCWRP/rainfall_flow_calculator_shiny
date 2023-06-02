@@ -5,9 +5,9 @@ flowUI <- function(id) {
   
   tagList(
     column(
-      4,
+      6,
       align = "left",
-      br(),
+      style = "vertical-align: top",
       fileInput(
         "file",
         "Step 1: Upload an Excel File",
@@ -26,12 +26,11 @@ flowUI <- function(id) {
       ),
     ),
     column(
-      4,
+      6,
       align = "left",
-      
       dateInput(
         inputId = "start_date_flow", 
-        label = "Step 2: Input the start of the hydrograph", 
+        label = "Step 3: Input the start of the hydrograph", 
         value = NULL, 
         min = NULL, 
         max = NULL
@@ -42,22 +41,14 @@ flowUI <- function(id) {
       ),
       dateInput(
         inputId = "end_date_flow", 
-        label = "Step 3: Input the end of the hydrograph", 
+        label = "Step 4: Input the end of the hydrograph", 
         value = NULL, min = NULL, max = NULL
       ),
       timeInput(
         inputId = "end_time_flow", 
         label = 'Input the end time'
-      )
-    ),
-    column(
-      4,
-      br(),
-      br(),
-      br(),
-      br(),
-      align = "left",
-      shinyjs::disabled(shinyWidgets::actionBttn("submit", "Submit", width = '200px'))
+      ),
+      shinyjs::disabled(shinyWidgets::actionBttn("submit", "Submit"))
     )
   )
 }

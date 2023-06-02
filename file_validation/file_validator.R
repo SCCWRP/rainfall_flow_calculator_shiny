@@ -24,7 +24,7 @@ has_two_columns <- function(file, analysis_type) {
     data <- readxl::read_excel(file$datapath, sheet = sheet)
     tmp[tmp$sheet == sheet, c("rows", "cols")] <- dim(data)
   }
-  tmp$valid <- (tmp$rows > 1 & tmp$cols == 2) | (tmp$rows == 0 & tmp$cols == 0)
+  tmp$valid <- tmp$cols == 2
 
   if (all(tmp$valid)) {
     return(NULL)
@@ -129,13 +129,30 @@ has_headers <- function(file) {
   }
 }
 
+has_at_least_inflow_outflow <- function(file) {
+  sheets <- readxl::excel_sheets(file$datapath)[-1]
+  tmp <- data.frame(sheet = sheets, rows = NA)
+  
+  for (sheet in sheets) {
+    data <- readxl::read_excel(file$datapath, sheet = sheet)
+    tmp[tmp$sheet == sheet, "rows"] <- nrow(data)
+  } 
+  
+  if (tmp[tmp$sheet == "inflow1", "rows"] > 0 & tmp[tmp$sheet == "outflow", "rows"] > 0) {
+    return(NULL)
+  }
+  else {
+    return(glue::glue("Data sheet must include at least inflow1 and outflow data."))
+  }
+}
+
 has_valid_outflow_time <- function(file) {
   sheets <- readxl::excel_sheets(file$datapath)[-1]
   tmp <- data.frame(sheet = sheets, first_timestamp = NA, first_outflow_timestamp = NA)
   
   for (sheet in sheets) {
     data <- readxl::read_excel(file$datapath, sheet = sheet, range = "A1:A2")
-    tmp[tmp$sheet == sheet, "first_timestamp"] <- data[1, 1]
+    tmp[tmp$sheet == sheet, "first_timestamp"] <- ifelse(is.na(data[1, 1]), 0, data[1, 1])
   }
   tmp$valid <- tmp$first_timestamp <= tmp[tmp$sheet == "outflow", "first_timestamp"]
   

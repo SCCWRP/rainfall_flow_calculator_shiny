@@ -73,6 +73,8 @@ server <- function(input, output, session) {
   
   flow_file_validator$add_rule("file", function(file) has_no_negative_values(file))
   
+  flow_file_validator$add_rule("file", function(file) has_at_least_inflow_outflow(file))
+  
   flow_file_validator$add_rule("file", function(file) has_valid_outflow_time(file))
   
 
@@ -89,11 +91,14 @@ server <- function(input, output, session) {
       shinyjs::toggleState("submit", rainfall_file_validator$is_valid())
     }
     else if (input$analysistype == "flow") {
-      showModal(modalDialog("Reading file... This window will close automatically when the file is loaded.", footer = NULL))
+      
       
       rainfall_file_validator$disable()
       flow_file_validator$enable()
-      
+      if (flow_file_validator$is_valid()) {
+        showModal(modalDialog("Reading file... This window will close automatically when the file is loaded.", footer = NULL))
+      }
+
       shinyjs::toggleState("submit", flow_file_validator$is_valid())
     }
   }) |>
@@ -327,14 +332,7 @@ server <- function(input, output, session) {
         })
       user_data <- lapply(user_data, function(x) append(x, list(time_unit = flow_time_unit())))
     }
-    print(paste(min(user_data$inflow1$datetime)))
-    print(paste(max(user_data$inflow1$datetime)))
-    print(paste(min(user_data$inflow2$datetime)))
-    print(paste(max(user_data$inflow2$datetime)))
-    print(paste(min(user_data$bypass$datetime)))
-    print(paste(max(user_data$bypass$datetime)))
-    print(paste(min(user_data$outflow$datetime)))
-    print(paste(max(user_data$outflow$datetime)))
+
     user_data <- jsonlite::toJSON(user_data, dataframe = "columns", POSIXt = "ISO8601", auto_unbox = TRUE)
     user_data
   })
@@ -355,9 +353,7 @@ server <- function(input, output, session) {
 
 
   statistics <- reactive({
-    print("response")
-    print(response())
-    
+
     if (input$analysistype == 'rainfall'){
       response()$statistics |>
         tibble::as_tibble() |>
@@ -707,7 +703,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       df <- statistics()
-      print(colnames(df) )
+
       if (input$analysistype == 'rainfall'){
         
         if (input$rainfall_resolution == 0.1){
@@ -743,7 +739,7 @@ server <- function(input, output, session) {
           antecedentdryperiod_days = antecedentdryperiod
         )
       } else if (input$analysistype == 'flow'){
-        print(df)
+
         df <- df %>% mutate(
           start_time = as.POSIXct(start_time, format = "%Y-%m-%d %H:%M:%S"),
           end_time = as.POSIXct(end_time, format = "%Y-%m-%d %H:%M:%S")

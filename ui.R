@@ -41,8 +41,8 @@ ui <- fluidPage(
 
   fluidRow(
     column(
-      1,
-      div()
+      4,
+      "This web application has been developed to enable consistent, transparent, easily applied calculations to generate statistics commonly use to describe rainfall and flow characteristics during stormwater best management practice (BMP) monitoring studies. The web app provides 2 types of analysis: rainfall and flow. For the rainfall analysis, the app provides the cumulative rainfall depth, rainfall duration, average rainfall intensity, and the maximum rainfall intensity over a 5-min or 10-min duration within a monitored event based on a user-uploaded hydrograph. For the flow analysis, hydrograph statistics determined by the web app include the total runoff volume, runoff duration, and peak (maximum) flow rate. If multiple hydrographs are provided for a single event, for example representing BMP inflow, outflow, and bypass, additional statistics are determined."
     ),
     column(
       2,
@@ -57,7 +57,7 @@ ui <- fluidPage(
       shinyWidgets::actionBttn("refresh", "Reset all", width = '200px')
     ),
     column(
-      7,
+      4,
       uiOutput("user_input")
       #rainfallflowUI("rainfall-flow-ui")
     ),
@@ -82,10 +82,6 @@ ui <- fluidPage(
     tabPanel(
       "Instructions",
       h3("Using this Application"),
-      "The following packages have been provided for each analysis type. 
-      Each package (.zip file) should have a README file, a template (.xlsx file) and a folder for demo data.
-      ",
-      HTML("<br>"),
       HTML("<b>It is required that the column names and tab names in the templates remain unchanged.</b>"),
       HTML("
       <ol>
