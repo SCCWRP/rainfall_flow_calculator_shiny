@@ -92,48 +92,48 @@ ui <- fluidPage(
         <li>
           Rainfall Analysis: 
             The user is advised to copy and paste the rainfall data, whether it is in the form of 1-minute or time-of-tips data, 
-            into the provided template. 
+            into the downloaded template. 
             It is important to note that the rain gauge values must be entered into the designated rain column within the template."),
-          
-          HTML("<ul>"),
-          
-          HTML("<li>"),
-          downloadLink("download_rainfall_template", label = "Download rainfall package"), 
-          HTML("</li>"),
-          
-          # HTML("<li>"),
-          # downloadLink("download_demo_1min", label = "Download 1-min demo data"), 
-          # HTML("</li>"),
-          # 
-          # HTML("<li>"),
-          # downloadLink("download_demo_tt", label = "Download time of tips demo data"), 
-          # HTML("</li>"),
-          
-          HTML("</ul>"),
-          HTML("
+      
+        HTML("<ul>"),
+        
+        HTML("<li>"),
+        downloadLink("download_rainfall_template", label = "Download rainfall template"), 
+        HTML("</li>"),
+        
+        HTML("<li>"),
+        downloadLink("download_demo_1min", label = "Download 1-min demo data"), 
+        HTML("</li>"),
+        
+        HTML("<li>"),
+        downloadLink("download_demo_tt", label = "Download time of tips demo data"), 
+        HTML("</li>"),
+        
+        HTML("</ul>"),
+        HTML("
         </li>
         
         <li>
           Flow Analysis: 
             Flow data should be copy-pasted from the user's datasheet to the 
-            provided data template. Up to four flows can be accomodated for analysis. The available flow types are inflow 1, inflow 2, outflow and bypass. Refer to the Methods tab for an illustration of the possible flow type configurations.
+            downloaded data template. Up to four flows can be accomodated for analysis. The available flow types are inflow 1, inflow 2, outflow and bypass. Refer to the Methods tab for an illustration of the possible flow type configurations.
             A user does not need to submit all four types, any combination of the flow types is acceptable."), 
-            
-            HTML("<br>"),
-            HTML("<b> If any of the data types are not applicable, leave the tab blank (as is).</b>"),
-            
-            HTML("<ul>"),
-              
-              HTML("<li>"),
-              downloadLink("download_flow_template", label = "Download flow package"), 
-              HTML("</li>"),
-              
-              # HTML("<li>"),
-              # downloadLink("download_demo_flow", label = "Download flow demo data"), 
-              # HTML("</li>"),
-            
-            HTML("</ul>"),
-            HTML("     
+      
+      HTML("<br>"),
+      HTML("<b> If any of the data types are not applicable, leave the tab blank (as is).</b>"),
+      
+      HTML("<ul>"),
+      
+      HTML("<li>"),
+      downloadLink("download_flow_template", label = "Download flow template"), 
+      HTML("</li>"),
+      
+      HTML("<li>"),
+      downloadLink("download_demo_flow", label = "Download flow demo data"), 
+      HTML("</li>"),
+      
+      HTML("</ul>"),
+      HTML("      
         </li>
         </li>
       </ol>

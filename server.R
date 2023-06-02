@@ -23,7 +23,11 @@ library(shinyWidgets)
 
 read_excel_allsheets <- function(filename, tibble = FALSE) {
   sheets <- readxl::excel_sheets(filename)
-  x <- lapply(sheets, function(X) readxl::read_excel(filename, sheet = X))
+  x <- lapply(sheets, function(X) {
+    if (X != 'Instructions') {
+      readxl::read_excel(filename, sheet = X)
+    }
+  })
   if(!tibble) x <- lapply(x, as.data.frame)
   names(x) <- sheets
   x
@@ -35,10 +39,11 @@ server <- function(input, output, session) {
   rainfall_file_validator <- shinyvalidate::InputValidator$new()
   rainfall_file_validator$add_rule("file", function(file) is_correct_filetype(file))
   
-  #rainfall_file_validator$add_rule("file", function(file) has_four_sheets(file))
-  # observe({
-  #   rainfall_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
-  # })  
+  rainfall_file_validator$add_rule("file", function(file) has_four_sheets(file))
+  observe({
+    rainfall_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
+  })
+  
   rainfall_file_validator$add_rule("file", function(file) has_headers(file))
   
   rainfall_file_validator$add_rule("file", function(file) has_correct_date_format(file))
@@ -47,7 +52,7 @@ server <- function(input, output, session) {
   
   rainfall_file_validator$add_rule("file", function(file) has_no_missing_values(file))
   
-  #rainfall_file_validator$add_rule("file", function(file) has_no_negative_values(file))
+  rainfall_file_validator$add_rule("file", function(file) has_no_negative_values(file))
   
 
   flow_file_validator <- shinyvalidate::InputValidator$new()
@@ -56,9 +61,10 @@ server <- function(input, output, session) {
   
   flow_file_validator$add_rule("file", function(file) has_four_sheets(file))
   
-  # observe({
-  #   flow_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
-  # })
+  observe({
+    flow_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
+  })
+  
   flow_file_validator$add_rule("file", function(file) has_headers(file))
   
   flow_file_validator$add_rule("file", function(file) has_correct_date_format(file))
@@ -69,7 +75,7 @@ server <- function(input, output, session) {
   
   flow_file_validator$add_rule("file", function(file) has_no_negative_values(file))
   
-  #flow_file_validator$add_rule("file", function(file) has_valid_outflow_time(file))
+  flow_file_validator$add_rule("file", function(file) has_valid_outflow_time(file))
   
 
   observe({
@@ -286,7 +292,8 @@ server <- function(input, output, session) {
   data_input <- reactive({
 
     if(input$analysistype == 'rainfall'){
-      user_data <- readxl::read_excel(input$file$datapath)
+      user_data <- read_excel_allsheets(input$file$datapath)
+      print(user_data)
       user_data <-user_data |>
         dplyr::select(c("datetime","rain"))
         user_data
@@ -619,10 +626,10 @@ server <- function(input, output, session) {
 
   output$download_rainfall_template <- downloadHandler(
     filename = function() {
-      paste("rainfall_package", ".zip", sep = "")
+      paste("rainfall_template", ".xlsx", sep = "")
     },
     content = function(file) {
-      template_path <- "export/rainfall_package.zip"
+      template_path <- "templates/rainfall_template.xlsx"
       file.copy(template_path, file, overwrite = TRUE)
     }
   )
@@ -633,8 +640,8 @@ server <- function(input, output, session) {
       paste("demo_data_1min", ".xlsx", sep = "")
     },
     content = function(file) {
-      data <- readxl::read_excel("demo_data/1min.xlsx")
-      writexl::write_xlsx(data, file)
+      template_path <- "demo_data/1min.xlsx"
+      file.copy(template_path, file, overwrite = TRUE)
     }
   )
 
@@ -644,17 +651,17 @@ server <- function(input, output, session) {
       paste("demo_data_timeoftips", ".xlsx", sep = "")
     },
     content = function(file) {
-      data <- readxl::read_excel("demo_data/timeoftips.xlsx")
-      writexl::write_xlsx(data, file)
+      template_path <- "demo_data/timeoftips.xlsx"
+      file.copy(template_path, file, overwrite = TRUE)
     }
   )
 
   output$download_flow_template <- downloadHandler(
     filename = function() {
-      paste("flow_package", ".zip", sep = "")
+      paste("flow_template", ".xlsx", sep = "")
     },
     content = function(file) {
-      template_path <- "export/flow_package.zip"
+      template_path <- "templates/flow_template.xlsx"
       file.copy(template_path, file, overwrite = TRUE)
     }
   )
