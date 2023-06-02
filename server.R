@@ -17,7 +17,6 @@ library(writexl)
 library(glue)
 library(shinyTime)
 library(readxl)
-library(lubridate)
 library(stringr)
 library(shinyWidgets)
 
@@ -39,7 +38,6 @@ server <- function(input, output, session) {
   rainfall_file_validator <- shinyvalidate::InputValidator$new()
   rainfall_file_validator$add_rule("file", function(file) is_correct_filetype(file))
   
-  rainfall_file_validator$add_rule("file", function(file) has_four_sheets(file))
   observe({
     rainfall_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
   })
@@ -59,7 +57,7 @@ server <- function(input, output, session) {
   
   flow_file_validator$add_rule("file", function(file) is_correct_filetype(file))
   
-  flow_file_validator$add_rule("file", function(file) has_four_sheets(file))
+  flow_file_validator$add_rule("file", function(file) has_five_sheets(file))
   
   observe({
     flow_file_validator$add_rule("file", function(file, analysis_type) has_two_columns(file, analysis_type), analysis_type=input$analysistype)
@@ -223,7 +221,7 @@ server <- function(input, output, session) {
         inputId = "choose_graph",
         label = "Choose a flow type:",
         choices = as.character(statistics()$flow_type),
-        selected = as.character(statistics()$flow_type)[1],
+        selected = as.character(statistics()$flow_type),
         multiple = TRUE
       )
 
@@ -235,9 +233,9 @@ server <- function(input, output, session) {
       
       updateDateInput(
         inputId = "start_date_flow",
-        value = min(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime)),
-        min = min(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime)),
-        max = max(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime))
+        value = min(date(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime)),
+        min = min(date(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime)),
+        max = max(date(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime))
       )
     }
 
@@ -247,9 +245,9 @@ server <- function(input, output, session) {
     if (input$analysistype == 'flow'){
       updateDateInput(
         inputId = "end_date_flow",
-        value = max(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)),
-        min = min(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)),
-        max = max(ymd_hms(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime))
+        value = max(date(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)),
+        min = min(date(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)),
+        max = max(date(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime))
       )
     }
   }) |> bindEvent(req(flow_file_validator$is_valid()))
@@ -293,15 +291,15 @@ server <- function(input, output, session) {
 
     if(input$analysistype == 'rainfall'){
       user_data <- read_excel_allsheets(input$file$datapath)
-      print(user_data)
       user_data <-user_data |>
         dplyr::select(c("datetime","rain"))
         user_data
 
     } else if (input$analysistype == 'flow'){
 
-      start <- as.POSIXct(paste(input$start_date_flow, format(as.POSIXct(input$start_time_flow),format="%H:%M:%S"), sep = " "))
-      end <- as.POSIXct(paste(input$end_date_flow, format(as.POSIXct(input$end_time_flow),format="%H:%M:%S"), sep = " "))
+      start <- ymd_hms(paste(input$start_date_flow, format(as.POSIXct(input$start_time_flow),format="%H:%M:%S"), sep = " "))
+      end <- ymd_hms(paste(input$end_date_flow, format(as.POSIXct(input$end_time_flow),format="%H:%M:%S"), sep = " "))
+      
 
       user_data <- read_excel_allsheets(input$file$datapath)
       user_data <- Filter(function(df) nrow(df) > 0, user_data)
@@ -329,6 +327,14 @@ server <- function(input, output, session) {
         })
       user_data <- lapply(user_data, function(x) append(x, list(time_unit = flow_time_unit())))
     }
+    print(paste(min(user_data$inflow1$datetime)))
+    print(paste(max(user_data$inflow1$datetime)))
+    print(paste(min(user_data$inflow2$datetime)))
+    print(paste(max(user_data$inflow2$datetime)))
+    print(paste(min(user_data$bypass$datetime)))
+    print(paste(max(user_data$bypass$datetime)))
+    print(paste(min(user_data$outflow$datetime)))
+    print(paste(max(user_data$outflow$datetime)))
     user_data <- jsonlite::toJSON(user_data, dataframe = "columns", POSIXt = "ISO8601", auto_unbox = TRUE)
     user_data
   })
@@ -458,7 +464,7 @@ server <- function(input, output, session) {
 
       DT::datatable(
         data |>
-          mutate(start_time = format(as.POSIXct(start_time), tz = "America/Los_Angeles")) |>
+          mutate(start_time = as.POSIXct(start_time)) |>
           #select(flow_type,start_time,peak_flow_rate,runoff_duration) |>
           select(flow_type, peak_flow_rate, runoff_duration, runoff_volume) |>
 
@@ -467,7 +473,7 @@ server <- function(input, output, session) {
               "Type of flow",
               #"Storm Date",
               glue("Peak flow rate ({flow_volume_unit()}/{flow_time_unit()})"),
-              glue("Duration of runoff ({flow_time_unit()})"),
+              glue("Duration of runoff (h)"),
               glue("Runoff volume ({flow_volume_unit()})")
             )
           )
