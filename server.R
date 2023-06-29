@@ -296,9 +296,9 @@ server <- function(input, output, session) {
 
     if(input$analysistype == 'rainfall'){
       user_data <- read_excel_allsheets(input$file$datapath)
-      user_data <-user_data |>
+      user_data <- user_data[[2]] |>
         dplyr::select(c("datetime","rain"))
-        user_data
+      user_data
 
     } else if (input$analysistype == 'flow'){
 
