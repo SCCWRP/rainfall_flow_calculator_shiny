@@ -60,7 +60,7 @@ has_no_negative_values <- function(file) {
   for (sheet in sheets) {
     data <- readxl::read_excel(file$datapath, sheet = sheet)
     tmp[tmp$sheet == sheet, "rows"] <- nrow(data)
-    tmp[tmp$sheet == sheet, "positive"] <- all(data >= 0)
+    tmp[tmp$sheet == sheet, "positive"] <- all(data[, 2] >= 0)
   }
   tmp$valid <- (tmp$rows > 0 & tmp$positive) | (tmp$rows == 0)
   
