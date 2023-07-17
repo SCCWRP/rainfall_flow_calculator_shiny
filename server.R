@@ -531,7 +531,19 @@ server <- function(input, output, session) {
 
         ggplot(cumulative_rain, aes(x = hours, y = cumsum)) +
           geom_line() +
-          labs(x = "Elapsed hours from the first rain tip", y = glue("Cumulative rainfall ({rain_unit()})"), title = "Total cumulative rainfall")
+          labs(
+            x="Elapsed hours from the first rain tip", 
+            y=glue("Cumulative rainfall ({rain_unit()})"), 
+            title = input$title
+          ) +
+          theme(
+            axis.text=element_text(size=18),
+            axis.title=element_text(size=18,face="bold"),
+            legend.title=element_text(size=18),
+            legend.text=element_text(size=18),
+            plot.title = element_text(size = 18, face = "bold"),
+            axis.text.x = element_text(angle = 45, hjust = 1)
+          )
 
       } else {
         cumulative_rain <- data_input() |>
@@ -557,15 +569,17 @@ server <- function(input, output, session) {
         ggplot(cumulative_rain, aes(x = hours, y = cumsum)) +
           geom_line() +
           labs(
-            x = "Elapsed hours from the first rain tip",
-            y = glue("Cumulative rainfall ({rain_unit()})"),
-            title = "Cumulative rainfall per a rain event"
+            x="Elapsed hours from the first rain tip",
+            y=glue("Cumulative rainfall ({rain_unit()})"),
+            title=input$title
           ) +
           theme(
             axis.text=element_text(size=18),
             axis.title=element_text(size=18,face="bold"),
             legend.title=element_text(size=18),
-            legend.text=element_text(size=18)
+            legend.text=element_text(size=18),
+            plot.title=element_text(size = 18, face = "bold"),
+            axis.text.x=element_text(angle = 45, hjust = 1)
           )
 
       }
@@ -586,18 +600,19 @@ server <- function(input, output, session) {
       ggplot(flow_df, aes(x = datetime, y = flow, colour = flow_type)) +
       geom_line() +
       ggtitle("Hydrograph") +
-      scale_x_datetime(breaks = "6 hours", date_labels = "%Y-%m-%d %H:%M:%S") + 
+      scale_x_datetime(breaks = "12 hours", date_labels = "%Y-%m-%d %H:%M") + 
       theme(
         axis.text=element_text(size=18),
         axis.title=element_text(size=18,face="bold"),
         legend.title=element_text(size=18),
         legend.text=element_text(size=18),
         plot.title = element_text(size = 18, face = "bold"),
-        axis.text.x = element_text(angle = 45, hjust = 1)
+        axis.text.x = element_text(angle = 90, hjust = 1)
       ) +
       labs(
         x=glue("Datetime"),
-        y=glue("Flow rate ({flow_volume_unit()}/{flow_time_unit()})")
+        y=glue("Flow rate ({flow_volume_unit()}/{flow_time_unit()})"),
+        title=input$title
       )
 
 

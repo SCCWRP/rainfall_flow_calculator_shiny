@@ -10,13 +10,13 @@ flowUI <- function(id) {
       style = "vertical-align: top",
       fileInput(
         "file",
-        "Step 1: Upload an Excel File",
+        "Upload an Excel File",
         multiple = FALSE,
         accept = ".xlsx"
       ),
       selectInput(
         inputId = "flow_unit",
-        label = "Step 2: Choose the flow units of the submitted data",
+        label = "Choose the flow units of the submitted data",
         choices = c(
           "L/s" = "L/s",
           "g/min (gpm)" = "g/m",
@@ -30,23 +30,30 @@ flowUI <- function(id) {
       align = "left",
       dateInput(
         inputId = "start_date_flow", 
-        label = "Step 3: Input the start of the hydrograph", 
+        label = "Start Date", 
         value = NULL, 
         min = NULL, 
         max = NULL
       ),
       timeInput(
         inputId = "start_time_flow", 
-        label = 'Input the start time'
+        label = 'Start Time'
       ),
       dateInput(
         inputId = "end_date_flow", 
-        label = "Step 4: Input the end of the hydrograph", 
+        label = "End Date", 
         value = NULL, min = NULL, max = NULL
       ),
       timeInput(
         inputId = "end_time_flow", 
-        label = 'Input the end time'
+        label = 'End Time'
+      ),
+      textInput(
+        inputId = "title",
+        label = "Graph Title",
+        placeholder = "Enter an optional title for the graph(s)",
+        value = "",
+        width = "100%"
       ),
       shinyjs::disabled(shinyWidgets::actionBttn("submit", "Submit"))
     )

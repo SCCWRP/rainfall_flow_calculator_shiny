@@ -87,9 +87,11 @@ ui <- fluidPage(
       <ol>
         <li>
           Rainfall Analysis: 
-            The user is advised to copy and paste the rainfall data, whether it is in the form of 1-minute or time-of-tips data, 
+            It is advised to copy and paste the rainfall data, whether it is in the form of 1-minute or time-of-tips data, 
             into the downloaded template. 
-            It is important to note that the rain gauge values must be entered into the designated rain column within the template."),
+            It is important to note that the rain gauge values must be entered into the designated rain column within the template.
+            <b>Continuous rainfall data are submittable.</b>  
+      "),
       
         HTML("<ul>"),
         
@@ -111,12 +113,14 @@ ui <- fluidPage(
         
         <li>
           Flow Analysis: 
-            Flow data should be copy-pasted from the user's datasheet to the 
+            Flow data should be copy-pasted from a user's datasheet to the 
             downloaded data template. Up to four flows can be accomodated for analysis. The available flow types are inflow 1, inflow 2, outflow and bypass. Refer to the Methods tab for an illustration of the possible flow type configurations.
-            A user does not need to submit all four types, any combination of the flow types is acceptable."), 
+            A user does not need to submit all four types, any combination of the flow types is acceptable.
+            <b>A user can only submit flow data for a single rain event. If any of the data types are not applicable, leave the tab blank (as is).</b> 
+             
+        "), 
       
       HTML("<br>"),
-      HTML("<b> If any of the data types are not applicable, leave the tab blank (as is).</b>"),
       
       HTML("<ul>"),
       
