@@ -90,7 +90,7 @@ ui <- fluidPage(
             It is advised to copy and paste the rainfall data, whether it is in the form of 1-minute or time-of-tips data, 
             into the downloaded template. 
             It is important to note that the rain gauge values must be entered into the designated rain column within the template.
-            <b>Continuous rainfall data are submittable.</b>  
+            <b>A user can submit a continuous rainfall record without skipping any timestamps, containing multiple events in a single file.</b>  
       "),
       
         HTML("<ul>"),
