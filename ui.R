@@ -18,7 +18,7 @@ ui <- fluidPage(
   tags$head(
     tags$style(
       paste0(
-      'body {font-size: ', 20, 'px}
+        'body {font-size: ', 20, 'px}
       .action-button {font-size: ', 20, 'px}
       '
       )
@@ -38,11 +38,11 @@ ui <- fluidPage(
   
   # Application title
   titlePanel("BMP Hydrology"),
-
+  
   fluidRow(
     column(
       4,
-      "This web application has been developed to enable consistent, transparent, easily applied calculations to generate statistics commonly use to describe rainfall and flow characteristics during stormwater best management practice (BMP) monitoring studies. The web app provides 2 types of analysis: rainfall and flow. For the rainfall analysis, the app provides the cumulative rainfall depth, rainfall duration, average rainfall intensity, and the maximum rainfall intensity over a 5-min or 10-min duration within a monitored event based on a user-uploaded hyetograph. For the flow analysis, hydrograph statistics determined by the web app include the total runoff volume, runoff duration, and peak (maximum) flow rate. If multiple hydrographs are provided for a single event, for example representing BMP inflow, outflow, and bypass, additional statistics are determined."
+      "This web application has been developed to enable consistent, transparent, easily applied calculations to generate statistics commonly use to describe rainfall and flow characteristics during stormwater best management practice (BMP) monitoring studies. The web app provides 2 types of analysis: rainfall and flow. For the rainfall analysis, the app provides the cumulative rainfall depth, rainfall duration, average rainfall intensity, and the maximum rainfall intensity over a 5-min or 10-min duration within a monitored event based on a user-uploaded hydrograph. For the flow analysis, hydrograph statistics determined by the web app include the total runoff volume, runoff duration, and peak (maximum) flow rate. If multiple hydrographs are provided for a single event, for example representing BMP inflow, outflow, and bypass, additional statistics are determined."
     ),
     column(
       2,
@@ -54,7 +54,7 @@ ui <- fluidPage(
           "Flow Analysis" = "flow"
         )
       ),
-      shinyWidgets::actionBttn("refresh", "Reset all", width = '200px')
+      shinyWidgets::actionBttn("refresh", "Reset all")
     ),
     column(
       4,
@@ -65,14 +65,12 @@ ui <- fluidPage(
       2,
       shinyWidgets::actionBttn(
         "feedback", 
-        "Feedback Form", 
-        width = '250px',
+        "Feedback Form",
         onclick ="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=PfKopOEaHEuZAuqhUwKBkLfF7RbFiCdKlqnmjECrBFxUMTBTVFpTSlcxM1VJSkM3NUdQQTdBSU5ENi4u', '_blank')"
       ),
       shinyWidgets::actionBttn(
         "apidoc", 
         "API Documentation", 
-        width = '250px',
         onclick ="window.open('https://nexus.sccwrp.org/bmp_hydrology/api/docs', '_blank')"
       ),
     )
@@ -93,22 +91,22 @@ ui <- fluidPage(
             <b>A user can submit a continuous rainfall record without skipping any timestamps, containing multiple events in a single file.</b>  
       "),
       
-        HTML("<ul>"),
-        
-        HTML("<li>"),
-        downloadLink("download_rainfall_template", label = "Download rainfall template"), 
-        HTML("</li>"),
-        
-        HTML("<li>"),
-        downloadLink("download_demo_1min", label = "Download 1-min demo data"), 
-        HTML("</li>"),
-        
-        HTML("<li>"),
-        downloadLink("download_demo_tt", label = "Download time of tips demo data"), 
-        HTML("</li>"),
-        
-        HTML("</ul>"),
-        HTML("
+      HTML("<ul>"),
+      
+      HTML("<li>"),
+      downloadLink("download_rainfall_template", label = "Download rainfall template"), 
+      HTML("</li>"),
+      
+      HTML("<li>"),
+      downloadLink("download_demo_1min", label = "Download 1-min demo data"), 
+      HTML("</li>"),
+      
+      HTML("<li>"),
+      downloadLink("download_demo_tt", label = "Download time of tips demo data"), 
+      HTML("</li>"),
+      
+      HTML("</ul>"),
+      HTML("
         </li>
         
         <li>
@@ -174,7 +172,7 @@ ui <- fluidPage(
         '
       )
     ),
-
+    
     id='full_page'
   )
 )

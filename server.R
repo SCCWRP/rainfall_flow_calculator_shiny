@@ -45,14 +45,14 @@ server <- function(input, output, session) {
   rainfall_file_validator$add_rule("file", function(file) has_headers(file))
   
   rainfall_file_validator$add_rule("file", function(file) has_correct_date_format(file))
-
+  
   rainfall_file_validator$add_rule("file", function(file) has_correct_measurement_format(file))
   
   rainfall_file_validator$add_rule("file", function(file) has_no_missing_values(file))
   
   rainfall_file_validator$add_rule("file", function(file) has_no_negative_values(file))
   
-
+  
   flow_file_validator <- shinyvalidate::InputValidator$new()
   
   flow_file_validator$add_rule("file", function(file) is_correct_filetype(file))
@@ -66,7 +66,7 @@ server <- function(input, output, session) {
   flow_file_validator$add_rule("file", function(file) has_headers(file))
   
   flow_file_validator$add_rule("file", function(file) has_correct_date_format(file))
-
+  
   flow_file_validator$add_rule("file", function(file) has_correct_measurement_format(file))
   
   flow_file_validator$add_rule("file", function(file) has_no_missing_values(file))
@@ -77,7 +77,7 @@ server <- function(input, output, session) {
   
   flow_file_validator$add_rule("file", function(file) has_valid_outflow_time(file))
   
-
+  
   observe({
     shinyjs::disable("analysistype")
   }) |>
@@ -91,14 +91,34 @@ server <- function(input, output, session) {
       shinyjs::toggleState("submit", rainfall_file_validator$is_valid())
     }
     else if (input$analysistype == "flow") {
-      
-      
+      showModal(
+        modalDialog(
+          id="my_modal",
+          title="Validating file...", 
+          footer=NULL
+        )
+      )
       rainfall_file_validator$disable()
       flow_file_validator$enable()
       if (flow_file_validator$is_valid()) {
-        showModal(modalDialog("Reading file... This window will close automatically when the file is loaded.", footer = NULL))
+        removeModal()
+        showModal(
+          modalDialog(
+            id="my_modal",
+            title="File is cleaned. Populating data for the inputs. This window will close automatically when the file is loaded",
+            footer=NULL
+          )
+        )
+      } else {
+        removeModal()
+        showModal(
+          modalDialog(
+            id="my_modal",
+            title="Errors are found in the uploaded file"
+          )
+        )
       }
-
+      
       shinyjs::toggleState("submit", flow_file_validator$is_valid())
     }
   }) |>
@@ -106,7 +126,7 @@ server <- function(input, output, session) {
   
   # Define reactiveValues
   tabs_list <- reactiveValues(data = list("Result" = NULL))
-
+  
   rain_unit <- reactive({
     if (input$analysistype == 'rainfall'){
       if (input$rainfall_resolution == 0.01){
@@ -122,10 +142,10 @@ server <- function(input, output, session) {
       out <- strsplit(input$flow_unit,"/")[[1]][1]
     }
   })
-
+  
   flow_time_unit <- reactive({
     if (input$analysistype == 'flow'){
-
+      
       out <- strsplit(input$flow_unit,"/")[[1]][2]
       
     }
@@ -141,7 +161,7 @@ server <- function(input, output, session) {
   observe({
     if (input$analysistype == 'rainfall'){
       output$user_input <- renderUI({ rainfallUI("rainfall") })
-       
+      
     } else if (input$analysistype == 'flow'){
       output$user_input <- renderUI({ flowUI("flow") })
     } 
@@ -197,24 +217,24 @@ server <- function(input, output, session) {
     }
     removeModal()
   }) |> bindEvent(statistics())
-
-
+  
+  
   observeEvent(input$plot1_dblclick, {
     brush <- input$plot1_brush
     if (!is.null(brush)) {
       ranges$x <- c(as.POSIXct(brush$xmin, origin = "1970-01-01"), as.POSIXct(brush$xmax, origin = "1970-01-01"))
       ranges$y <- c(as.POSIXct(brush$ymin, origin = "1970-01-01"), as.POSIXct(brush$ymax, origin = "1970-01-01"))
-
+      
     } else {
       ranges$x <- NULL
       ranges$y <- NULL
     }
   })
-
+  
   output$choose_graph_ui <- renderUI({
-
+    
     if (input$analysistype == 'rainfall'){
-
+      
       selectInput(
         inputId = "choose_graph",
         label = "Choose a rain event:",
@@ -229,10 +249,10 @@ server <- function(input, output, session) {
         selected = as.character(statistics()$flow_type),
         multiple = TRUE
       )
-
+      
     }
   }) |> bindEvent(input$submit)
-
+  
   observe({
     if (input$analysistype == 'flow'){
       
@@ -243,42 +263,47 @@ server <- function(input, output, session) {
         max = max(date(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime))
       )
     }
-
+    
   }) |> bindEvent(req(flow_file_validator$is_valid()))
-
+  
   observe({
     if (input$analysistype == 'flow'){
       updateDateInput(
-        inputId = "end_date_flow",
-        value = max(date(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)),
+        inputId="end_date_flow",
+        value=max(date(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)),
         min = min(date(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)),
         max = max(date(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime))
       )
     }
   }) |> bindEvent(req(flow_file_validator$is_valid()))
-
+  
   observe({
     if (input$analysistype == 'flow'){
       updateTimeInput(
         session,
-        inputId = "start_time_flow",
-        value = hms::as_hms(
+        inputId="start_time_flow",
+        value=hms::as_hms(
           format(
-            min(as.POSIXct(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime)), format='%H:%M:%S'
+            min(
+              as.POSIXct(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime)
+            ), 
+            format='%H:%M:%S'
           )
         )
       )
     }
   }) |> bindEvent(req(flow_file_validator$is_valid()))
-
+  
   observe({
     if (input$analysistype == 'flow'){
       updateTimeInput(
-        session = session,
+        session=session,
         inputId = "end_time_flow",
         value = hms::as_hms(
           format(
-            max(as.POSIXct(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)), format='%H:%M:%S'
+            max(
+              as.POSIXct(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)
+            ), format='%H:%M:%S'
           )
         )
       )
@@ -286,40 +311,44 @@ server <- function(input, output, session) {
     }
     removeModal()
   }) |> bindEvent(req(flow_file_validator$is_valid()))
-
+  
+  
+  reactive_text <- reactiveVal("")
   observe({
+    reactive_text("If you would like to submit another file, repeat the steps and click Re-Submit")
     updateActionButton(session, inputId = "submit", label = "Re-submit")
   }) |> bindEvent(input$submit)
-
-
+  output$resubmit_notice <- renderText({
+    reactive_text()
+  })
+  
   data_input <- reactive({
-
+    
     if(input$analysistype == 'rainfall'){
       user_data <- read_excel_allsheets(input$file$datapath)
-      user_data <- user_data[[2]] |>
-        dplyr::select(c("datetime","rain"))
+      user_data <- user_data[[2]] |> dplyr::select(c("datetime","rain"))
       user_data
-
+      
     } else if (input$analysistype == 'flow'){
-
+      
       start <- ymd_hms(paste(input$start_date_flow, format(as.POSIXct(input$start_time_flow),format="%H:%M:%S"), sep = " "))
       end <- ymd_hms(paste(input$end_date_flow, format(as.POSIXct(input$end_time_flow),format="%H:%M:%S"), sep = " "))
       
-
+      
       user_data <- read_excel_allsheets(input$file$datapath)
       user_data <- Filter(function(df) nrow(df) > 0, user_data)
       user_data <- lapply(user_data, function (df) df %>% filter(between(datetime, start, end)))
-
-
+      
+      
     } else {
-
+      
       user_data <- user_data |>
         dplyr::select(c(input$date_column, input$rain_column, input$flow_column))
-        names(user_data) <- c("datetime", "rain", "flow")
-        user_data
+      names(user_data) <- c("datetime", "rain", "flow")
+      user_data
     }
   })
-
+  
   payload <- reactive({
     if (input$analysistype == 'rainfall'){
       user_data <- data_input() %>% arrange(datetime)
@@ -332,12 +361,12 @@ server <- function(input, output, session) {
         })
       user_data <- lapply(user_data, function(x) append(x, list(time_unit = flow_time_unit())))
     }
-
+    
     user_data <- jsonlite::toJSON(user_data, dataframe = "columns", POSIXt = "ISO8601", auto_unbox = TRUE)
     user_data
   })
-
-
+  
+  
   response <- reactive({
     body = payload()
     if (input$analysistype == 'rainfall'){
@@ -350,10 +379,10 @@ server <- function(input, output, session) {
     content <- httr::content(res)
     content
   })
-
-
+  
+  
   statistics <- reactive({
-
+    
     if (input$analysistype == 'rainfall'){
       response()$statistics |>
         tibble::as_tibble() |>
@@ -405,14 +434,14 @@ server <- function(input, output, session) {
               end_time = stringr::str_replace(end_time,"T"," "),
               
             )
-
+          
         }
-        ) %>%
+      ) %>%
         dplyr::bind_rows() %>%
         mutate(flow_type = factor(flow_type, levels = c("inflow1", "inflow2", "bypass", "outflow"))) %>%
         arrange(flow_type)
-
-
+      
+      
     }
   }) |> bindEvent(input$submit)
   
@@ -426,7 +455,7 @@ server <- function(input, output, session) {
           avg_rainfall_intensity = round(avg_rainfall_intensity, 2),
           peak_5_min_rainfall_intensity = round(peak_5_min_rainfall_intensity, 2),
           peak_10_min_rainfall_intensity = round(peak_10_min_rainfall_intensity, 2),
-
+          
         )
       if (input$rainfall_resolution == 0.1){
         data <- data |> dplyr::rename(
@@ -436,7 +465,7 @@ server <- function(input, output, session) {
           `Average Rainfall Intensity (mm/hr)` = avg_rainfall_intensity,
           `Peak 5-min Rainfall Intensity (mm/hr)` = peak_5_min_rainfall_intensity,
           `Peak 10-min Rainfall Intensity (mm/hr)` = peak_10_min_rainfall_intensity
-          )
+        )
       } else {
         data <- data |> dplyr::rename(
           `Event ID`= event,
@@ -453,17 +482,18 @@ server <- function(input, output, session) {
           style = 'caption-side: top; text-align: center; color:black;  font-size:200% ;',
           'Statistics of the rainfall data'
         ),
+        options = list(searching = FALSE),
         rownames = FALSE
       )
     } else if (input$analysistype == 'flow'){
       data <- statistics()
-
+      
       DT::datatable(
         data |>
           mutate(start_time = as.POSIXct(start_time)) |>
           #select(flow_type,start_time,peak_flow_rate,runoff_duration) |>
           select(flow_type, peak_flow_rate, runoff_duration, runoff_volume) |>
-
+          
           setNames(
             c(
               "Type of flow",
@@ -478,15 +508,16 @@ server <- function(input, output, session) {
           style = 'caption-side: top; text-align: center; color:black;  font-size:200% ;',
           'Statistics of the flow data'
         ),
+        options = list(searching = FALSE),
         rownames = FALSE
       )
     } else {
       data <- statistics()
     }
-
+    
   }, selection = 'none') |> bindEvent(input$submit)
-
-
+  
+  
   output$percent_change = renderText({
     if (input$analysistype == 'flow'){
       result <- ""
@@ -519,7 +550,7 @@ server <- function(input, output, session) {
       result
     }
   }) |> bindEvent(input$submit)
-
+  
   plotInput <- reactive({
     if (input$analysistype == 'rainfall'){
       if (input$choose_graph == "All events"){
@@ -528,7 +559,7 @@ server <- function(input, output, session) {
             cumsum = cumsum(rain),
             hours = lubridate::time_length(datetime - datetime[1], unit = "hour")
           )
-
+        
         ggplot(cumulative_rain, aes(x = hours, y = cumsum)) +
           geom_line() +
           labs(
@@ -544,7 +575,7 @@ server <- function(input, output, session) {
             plot.title = element_text(size = 18, face = "bold"),
             axis.text.x = element_text(angle = 45, hjust = 1)
           )
-
+        
       } else {
         cumulative_rain <- data_input() |>
           dplyr::mutate(dummy = TRUE) |>
@@ -581,12 +612,12 @@ server <- function(input, output, session) {
             plot.title=element_text(size = 18, face = "bold"),
             axis.text.x=element_text(angle = 45, hjust = 1)
           )
-
+        
       }
     } else if (input$analysistype == 'flow'){
-
+      
       flow_df <- data_input()
-
+      
       flow_df <- bind_rows(
         lapply(
           seq_along(flow_df),
@@ -596,51 +627,51 @@ server <- function(input, output, session) {
         )
       ) %>% filter(flow_type %in% input$choose_graph) %>%
         mutate(hours = lubridate::time_length(datetime - datetime[1], unit = "minute"))
-
+      
       ggplot(flow_df, aes(x = datetime, y = flow, colour = flow_type)) +
-      geom_line() +
-      ggtitle("Hydrograph") +
-      scale_x_datetime(breaks = "12 hours", date_labels = "%Y-%m-%d %H:%M") + 
-      theme(
-        axis.text=element_text(size=18),
-        axis.title=element_text(size=18,face="bold"),
-        legend.title=element_text(size=18),
-        legend.text=element_text(size=18),
-        plot.title = element_text(size = 18, face = "bold"),
-        axis.text.x = element_text(angle = 90, hjust = 1)
-      ) +
-      labs(
-        x=glue("Datetime"),
-        y=glue("Flow rate ({flow_volume_unit()}/{flow_time_unit()})"),
-        title=input$title
-      )
-
-
+        geom_line() +
+        ggtitle("Hydrograph") +
+        scale_x_datetime(breaks = "12 hours", date_labels = "%Y-%m-%d %H:%M") + 
+        theme(
+          axis.text=element_text(size=18),
+          axis.title=element_text(size=18,face="bold"),
+          legend.title=element_text(size=18),
+          legend.text=element_text(size=18),
+          plot.title = element_text(size = 18, face = "bold"),
+          axis.text.x = element_text(angle = 90, hjust = 1)
+        ) +
+        labs(
+          x=glue("Datetime"),
+          y=glue("Flow rate ({flow_volume_unit()}/{flow_time_unit()})"),
+          title=input$title
+        )
+      
+      
     } else {
       flow <- data_input()
       ggplot(flow, aes(x = datetime, y = flow)) + geom_line()
     }
-
-    })
-
-
+    
+  })
+  
+  
   output$rain_flow_plot <- renderPlot({
     if (input$analysistype == 'rainfall'){
-
+      
       plotInput() +
         coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)
     } else if (input$analysistype == 'flow'){
-
+      
       plotInput() +
         coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)
-
+      
     } else {
       plotInput()
     }
-
+    
   }) |> bindEvent(input$choose_graph, input$submit, input$plot1_dblclick)
-
-
+  
+  
   output$download_rainfall_template <- downloadHandler(
     filename = function() {
       paste("rainfall_template", ".xlsx", sep = "")
@@ -650,8 +681,8 @@ server <- function(input, output, session) {
       file.copy(template_path, file, overwrite = TRUE)
     }
   )
-
-
+  
+  
   output$download_demo_1min <- downloadHandler(
     filename = function() {
       paste("demo_data_1min", ".xlsx", sep = "")
@@ -661,8 +692,8 @@ server <- function(input, output, session) {
       file.copy(template_path, file, overwrite = TRUE)
     }
   )
-
-
+  
+  
   output$download_demo_tt <- downloadHandler(
     filename = function() {
       paste("demo_data_timeoftips", ".xlsx", sep = "")
@@ -672,7 +703,7 @@ server <- function(input, output, session) {
       file.copy(template_path, file, overwrite = TRUE)
     }
   )
-
+  
   output$download_flow_template <- downloadHandler(
     filename = function() {
       paste("flow_template", ".xlsx", sep = "")
@@ -682,7 +713,7 @@ server <- function(input, output, session) {
       file.copy(template_path, file, overwrite = TRUE)
     }
   )
-
+  
   output$download_demo_flow <- downloadHandler(
     filename = function() {
       paste("demo_data_flow", ".xlsx", sep = "")
@@ -692,7 +723,7 @@ server <- function(input, output, session) {
       file.copy(template_path, file, overwrite = TRUE)
     }
   )
-
+  
   output$download_demo_rainfall_flow <- downloadHandler(
     filename = function() {
       paste("demo_data_rainfall_flow", ".xlsx", sep = "")
@@ -702,7 +733,7 @@ server <- function(input, output, session) {
       writexl::write_xlsx(data, file)
     }
   )
-
+  
   output$download_summary <- downloadHandler(
     filename = function() {
       paste("summary_table", ".csv", sep = "")
@@ -711,14 +742,14 @@ server <- function(input, output, session) {
       write.csv(statistics(), file, row.names = FALSE)
     }
   )
-
+  
   output$download_summary_smc <- downloadHandler(
     filename = function() {
       paste(glue("summary_table_smc_format_{input$analysistype}"), ".csv", sep = "")
     },
     content = function(file) {
       df <- statistics()
-
+      
       if (input$analysistype == 'rainfall'){
         
         if (input$rainfall_resolution == 0.1){
@@ -754,7 +785,7 @@ server <- function(input, output, session) {
           antecedentdryperiod_days = antecedentdryperiod
         )
       } else if (input$analysistype == 'flow'){
-
+        
         df <- df %>% mutate(
           start_time = as.POSIXct(start_time, format = "%Y-%m-%d %H:%M:%S"),
           end_time = as.POSIXct(end_time, format = "%Y-%m-%d %H:%M:%S")
@@ -783,13 +814,13 @@ server <- function(input, output, session) {
         )
         
       }
-
+      
       write.csv(df, file, row.names = FALSE)
     }
   )
   
   
-
+  
   output$download_plot <- downloadHandler(
     filename = function() {
       paste("downloaded_plot", ".png", sep = "")
@@ -798,8 +829,8 @@ server <- function(input, output, session) {
       ggsave(file, plot = plotInput() + coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE), device = "png")
     }
   )
-
-
+  
+  
 }
 
 

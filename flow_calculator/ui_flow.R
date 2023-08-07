@@ -10,13 +10,13 @@ flowUI <- function(id) {
       style = "vertical-align: top",
       fileInput(
         "file",
-        "Upload an Excel File",
+        "Step 1: Upload flow data (.xlsx file). The template is provided in the Instruction section.",
         multiple = FALSE,
         accept = ".xlsx"
       ),
       selectInput(
         inputId = "flow_unit",
-        label = "Choose the flow units of the submitted data",
+        label = "Step 2: Choose a flow unit of the submitted data",
         choices = c(
           "L/s" = "L/s",
           "g/min (gpm)" = "g/m",
@@ -28,29 +28,36 @@ flowUI <- function(id) {
     column(
       6,
       align = "left",
-      dateInput(
-        inputId = "start_date_flow", 
-        label = "Start Date", 
-        value = NULL, 
-        min = NULL, 
-        max = NULL
+      shiny::textOutput("startdatetime-notice"),
+      tagAppendAttributes(
+        dateInput(
+          inputId = "start_date_flow", 
+          label = "Step 3: Choose a start date", 
+          value = NULL, 
+          min = NULL, 
+          max = NULL
+        ),
+        onkeydown ='return false'
       ),
       timeInput(
         inputId = "start_time_flow", 
-        label = 'Start Time'
+        label = 'Step 4: Choose a start time'
       ),
-      dateInput(
-        inputId = "end_date_flow", 
-        label = "End Date", 
-        value = NULL, min = NULL, max = NULL
+      tagAppendAttributes(
+        dateInput(
+          inputId = "end_date_flow", 
+          label = "Step 5: Choose an end date", 
+          value = NULL, min = NULL, max = NULL
+        ),
+        onkeydown ='return false'
       ),
       timeInput(
         inputId = "end_time_flow", 
-        label = 'End Time'
+        label = 'Step 6: Choose an end time'
       ),
       textInput(
         inputId = "title",
-        label = "Graph Title",
+        label = "Step 7: Input a title for the graph (optional)",
         placeholder = "Enter an optional title for the graph(s)",
         value = "",
         width = "100%"
