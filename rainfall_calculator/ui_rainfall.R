@@ -15,10 +15,10 @@ rainfallUI <- function(id) {
         accept = ".xlsx"
       ),
       selectInput(
-        inputId = "rainfall_resolution",
-        label = "Step 2: Choose a rainfall resolution",
-        choices = c("0.01 inch" = 0.01, "0.1 mm" = 0.1),
-        selected = "0.01 inch"
+        inputId = "rainfall_unit",
+        label = "Step 2: Indicate units of rainfall measurement",
+        choices = c("inch", "mm"),
+        selected = "inch"
       ),
       textInput(
         inputId = "title",

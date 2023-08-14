@@ -129,7 +129,7 @@ server <- function(input, output, session) {
   
   rain_unit <- reactive({
     if (input$analysistype == 'rainfall'){
-      if (input$rainfall_resolution == 0.01){
+      if (input$rainfall_unit == "inch"){
         out <- "inch"
       } else {
         out <- "mm"
@@ -457,7 +457,7 @@ server <- function(input, output, session) {
           peak_10_min_rainfall_intensity = round(peak_10_min_rainfall_intensity, 2),
           
         )
-      if (input$rainfall_resolution == 0.1){
+      if (input$rainfall_unit == "mm"){
         data <- data |> dplyr::rename(
           `Event ID`= event,
           `Storm Date`= first_rain,
@@ -752,7 +752,7 @@ server <- function(input, output, session) {
       
       if (input$analysistype == 'rainfall'){
         
-        if (input$rainfall_resolution == 0.1){
+        if (input$rainfall_unit == 'mm'){
           totaldepthunits <- 'mm'
           onehourpeakrateunit <- 'mm/hr'
         } else {
