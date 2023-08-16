@@ -22,10 +22,14 @@ library(shinyWidgets)
 
 read_excel_allsheets <- function(filename, tibble = FALSE) {
   sheets <- readxl::excel_sheets(filename)
+  sheets <- sheets[sheets != "Instructions"]
   x <- lapply(sheets, function(X) {
-    if (X != 'Instructions') {
-      readxl::read_excel(filename, sheet = X)
-    }
+    current_sheet <- readxl::read_excel(filename, sheet = X) |>
+      mutate(
+        datetime = lubridate::as_datetime(datetime) |>
+          lubridate::force_tz("UTC")
+      )
+    current_sheet
   })
   if(!tibble) x <- lapply(x, as.data.frame)
   names(x) <- sheets
@@ -82,6 +86,7 @@ server <- function(input, output, session) {
     shinyjs::disable("analysistype")
   }) |>
     bindEvent(input$submit)
+  
   
   observe({
     if(input$analysistype == "rainfall") {
@@ -252,65 +257,110 @@ server <- function(input, output, session) {
       
     }
   }) |> bindEvent(input$submit)
+
   
+  flow_dates_data <- reactive({
+    if (input$analysistype == 'flow') {
+      read_excel_allsheets(input$file$datapath)
+    }
+  }) |>
+    bindEvent(req(flow_file_validator$is_valid()))
+  
+  min_datetime <- reactive({
+    if (input$analysistype == 'flow') {
+      do.call(min, lapply(flow_dates_data(), function(x) min(x$datetime)))
+    }
+  }) 
+  
+  max_datetime <- reactive({
+    if (input$analysistype == 'flow') {
+      do.call(max, lapply(flow_dates_data(), function(x) max(x$datetime)))
+    }
+  }) 
+    
   observe({
     if (input$analysistype == 'flow'){
       
+      max_date <- date(max_datetime())
+      min_date <- date(min_datetime())
+      max_time <- max_datetime()
+      min_time <- min_datetime()
+      
+      
       updateDateInput(
         inputId = "start_date_flow",
-        value = min(date(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime)),
-        min = min(date(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime)),
-        max = max(date(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime))
+        value = min_date,
+        min = min_date,
+        max = max_date
       )
-    }
-    
-  }) |> bindEvent(req(flow_file_validator$is_valid()))
-  
-  observe({
-    if (input$analysistype == 'flow'){
+
       updateDateInput(
         inputId="end_date_flow",
-        value=max(date(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)),
-        min = min(date(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)),
-        max = max(date(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime))
+        value=max_date,
+        min = min_date,
+        max = max_date
       )
-    }
-  }) |> bindEvent(req(flow_file_validator$is_valid()))
-  
-  observe({
-    if (input$analysistype == 'flow'){
+
       updateTimeInput(
         session,
         inputId="start_time_flow",
-        value=hms::as_hms(
-          format(
-            min(
-              as.POSIXct(readxl::read_excel(input$file$datapath, sheet = 'inflow1')$datetime)
-            ), 
-            format='%H:%M:%S'
-          )
-        )
+        value= min_time
       )
-    }
-  }) |> bindEvent(req(flow_file_validator$is_valid()))
-  
-  observe({
-    if (input$analysistype == 'flow'){
+      
       updateTimeInput(
         session=session,
         inputId = "end_time_flow",
-        value = hms::as_hms(
-          format(
-            max(
-              as.POSIXct(readxl::read_excel(input$file$datapath, sheet = 'outflow')$datetime)
-            ), format='%H:%M:%S'
-          )
-        )
+        value = max_time
       )
       
     }
     removeModal()
   }) |> bindEvent(req(flow_file_validator$is_valid()))
+  
+  
+  input_start_time_d <- debounce(
+    reactive({
+      req(input$end_time_flow, input$end_date_flow)
+      datetime_out <- input$start_time_flow
+      date(datetime_out) <- input$start_date_flow
+      lubridate::force_tz(datetime_out, "UTC")
+    }), 
+    500
+  )
+  input_end_time_d <- debounce(
+    reactive({
+      req(input$end_time_flow, input$end_date_flow)
+      datetime_out <- input$end_time_flow
+      date(datetime_out) <- input$end_date_flow
+      lubridate::force_tz(datetime_out, "UTC")
+    }), 
+    500
+  )
+  
+  observe({
+    if (input$analysistype == 'flow') {
+      if (input_start_time_d() < min_datetime()) {
+        shinyTime::updateTimeInput(session = session, inputId = "start_time_flow", value = min_datetime())
+        updateDateInput(session = session, inputId = "start_date_flow", value = lubridate::date(min_datetime()))
+      }
+      if (input_end_time_d() > max_datetime()) {
+        shinyTime::updateTimeInput(session = session, inputId = "end_time_flow", value = max_datetime())
+        updateDateInput(session = session, inputId = "end_date_flow", value = lubridate::date(max_datetime()))
+      }
+      if (input_start_time_d() > max_datetime()) {
+        shinyTime::updateTimeInput(session = session, inputId = "start_time_flow", value = min_datetime())
+        updateDateInput(session = session, inputId = "start_date_flow", value = lubridate::date(min_datetime()))
+        
+      }
+      if (input_start_time_d() > input_end_time_d()) {
+        shinyTime::updateTimeInput(session = session, inputId = "start_time_flow", value = min_datetime())
+        updateDateInput(session = session, inputId = "start_date_flow", value = lubridate::date(min_datetime()))
+        
+        shinyTime::updateTimeInput(session = session, inputId = "end_time_flow", value = max_datetime())
+        updateDateInput(session = session, inputId = "end_date_flow", value = lubridate::date(max_datetime()))
+      }
+    }
+  })
   
   
   reactive_text <- reactiveVal("")
@@ -419,7 +469,7 @@ server <- function(input, output, session) {
       my_content <- response()$statistics
       my_content <- lapply(
         seq_along(my_content), function(i) if(names(my_content)[i] %in% c('inflow1','inflow2','bypass','outflow') ){
-          my_content[[i]] %>% as_tibble() %>% tidyr::unnest()    %>%
+          my_content[[i]] %>% as_tibble() %>% tidyr::unnest(cols = c(end_time, peak_flow_rate, runoff_duration, runoff_volume, start_time))    %>%
             mutate(
               flow_type = names(my_content)[i],
               runoff_duration = round(runoff_duration, 1),
@@ -428,7 +478,7 @@ server <- function(input, output, session) {
               
               
             ) %>%
-            select(flow_type, start_time, peak_flow_rate, runoff_duration, runoff_volume, start_time, end_time) %>%
+            select(flow_type, start_time, peak_flow_rate, runoff_duration, runoff_volume, end_time) %>%
             mutate(
               start_time = stringr::str_replace(start_time,"T"," "),
               end_time = stringr::str_replace(end_time,"T"," "),
@@ -449,31 +499,46 @@ server <- function(input, output, session) {
   output$stats <- DT::renderDataTable({
     if (input$analysistype == 'rainfall'){
       data <- statistics() |>
-        dplyr::select(-last_rain, -antecedent_dry_period, -peak_60_min_rainfall_intensity) |>
+        dplyr::select(
+          event, 
+          first_rain, 
+          total_rainfall, 
+          avg_rainfall_intensity,
+          peak_5_min_rainfall_intensity,
+          peak_10_min_rainfall_intensity,
+          peak_60_min_rainfall_intensity,
+          antecedent_dry_period
+        ) |>
         dplyr::mutate(
           first_rain = format(as.POSIXct(first_rain), format = "%Y-%m-%d %H:%M:%S"),
+          total_rainfall = round(total_rainfall, 2),
           avg_rainfall_intensity = round(avg_rainfall_intensity, 2),
           peak_5_min_rainfall_intensity = round(peak_5_min_rainfall_intensity, 2),
           peak_10_min_rainfall_intensity = round(peak_10_min_rainfall_intensity, 2),
-          
+          peak_60_min_rainfall_intensity = round(peak_60_min_rainfall_intensity, 2),
+          antecedent_dry_period = round(antecedent_dry_period, 2)
         )
       if (input$rainfall_unit == "mm"){
         data <- data |> dplyr::rename(
           `Event ID`= event,
           `Storm Date`= first_rain,
-          `Total Rainfall (P) (mm)` = total_rainfall,
+          `Total Rainfall (mm)` = total_rainfall,
           `Average Rainfall Intensity (mm/hr)` = avg_rainfall_intensity,
           `Peak 5-min Rainfall Intensity (mm/hr)` = peak_5_min_rainfall_intensity,
-          `Peak 10-min Rainfall Intensity (mm/hr)` = peak_10_min_rainfall_intensity
+          `Peak 10-min Rainfall Intensity (mm/hr)` = peak_10_min_rainfall_intensity,
+          `Peak 60-min Rainfall Intensity (mm/hr)` = peak_60_min_rainfall_intensity,
+          `Antecedent Dry Period (days)` = antecedent_dry_period
         )
       } else {
         data <- data |> dplyr::rename(
           `Event ID`= event,
           `Storm Date`= first_rain,
-          `Total Rainfall (P) (inches)` = total_rainfall,
+          `Total Rainfall (inches)` = total_rainfall,
           `Average Rainfall Intensity (inch/hr)` = avg_rainfall_intensity,
           `Peak 5-min Rainfall Intensity (inch/hr)` = peak_5_min_rainfall_intensity,
-          `Peak 10-min Rainfall Intensity (inch/hr)` = peak_10_min_rainfall_intensity
+          `Peak 10-min Rainfall Intensity (inch/hr)` = peak_10_min_rainfall_intensity,
+          `Peak 60-min Rainfall Intensity (inch/hr)` = peak_60_min_rainfall_intensity,
+          `Antecedent Dry Period (days)` = antecedent_dry_period
         )
       }
       DT::datatable(
@@ -482,8 +547,9 @@ server <- function(input, output, session) {
           style = 'caption-side: top; text-align: center; color:black;  font-size:200% ;',
           'Statistics of the rainfall data'
         ),
-        options = list(searching = FALSE),
-        rownames = FALSE
+        options = list(searching = FALSE, lengthChange = FALSE),
+        rownames = FALSE,
+        selection = 'none'
       )
     } else if (input$analysistype == 'flow'){
       data <- statistics()
@@ -508,14 +574,15 @@ server <- function(input, output, session) {
           style = 'caption-side: top; text-align: center; color:black;  font-size:200% ;',
           'Statistics of the flow data'
         ),
-        options = list(searching = FALSE),
-        rownames = FALSE
+        options = list(searching = FALSE, lengthChange = FALSE),
+        rownames = FALSE,
+        selection = 'none'
       )
     } else {
       data <- statistics()
     }
     
-  }, selection = 'none') |> bindEvent(input$submit)
+  }) |> bindEvent(input$submit)
   
   
   output$percent_change = renderText({
