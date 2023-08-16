@@ -462,8 +462,17 @@ server <- function(input, output, session) {
           avg_rainfall_intensity,
           peak_5_min_rainfall_intensity,
           peak_10_min_rainfall_intensity,
-          antecedent_dry_period,
-          peak_60_min_rainfall_intensity
+          peak_60_min_rainfall_intensity,
+          antecedent_dry_period 
+        ) |>
+        dplyr::mutate(
+          first_rain = format(as.POSIXct(first_rain), format = "%Y-%m-%d %H:%M:%S"),
+          total_rainfall = round(total_rainfall, 2),
+          avg_rainfall_intensity = round(avg_rainfall_intensity, 2),
+          peak_5_min_rainfall_intensity = round(peak_5_min_rainfall_intensity, 2),
+          peak_10_min_rainfall_intensity = round(peak_10_min_rainfall_intensity, 2),
+          peak_60_min_rainfall_intensity = round(peak_60_min_rainfall_intensity, 2),
+          antecedent_dry_period = round(antecedent_dry_period, 2)
         )
     } else if (input$analysistype == 'flow'){
       my_content <- response()$statistics
@@ -496,93 +505,79 @@ server <- function(input, output, session) {
   }) |> bindEvent(input$submit)
   
   
-  output$stats <- DT::renderDataTable({
+  
+  
+  stats <- reactive({
     if (input$analysistype == 'rainfall'){
-      data <- statistics() |>
-        dplyr::select(
-          event, 
-          first_rain, 
-          total_rainfall, 
-          avg_rainfall_intensity,
-          peak_5_min_rainfall_intensity,
-          peak_10_min_rainfall_intensity,
-          peak_60_min_rainfall_intensity,
-          antecedent_dry_period
-        ) |>
-        dplyr::mutate(
-          first_rain = format(as.POSIXct(first_rain), format = "%Y-%m-%d %H:%M:%S"),
-          total_rainfall = round(total_rainfall, 2),
-          avg_rainfall_intensity = round(avg_rainfall_intensity, 2),
-          peak_5_min_rainfall_intensity = round(peak_5_min_rainfall_intensity, 2),
-          peak_10_min_rainfall_intensity = round(peak_10_min_rainfall_intensity, 2),
-          peak_60_min_rainfall_intensity = round(peak_60_min_rainfall_intensity, 2),
-          antecedent_dry_period = round(antecedent_dry_period, 2)
-        )
+      data <- statistics() 
       if (input$rainfall_unit == "mm"){
-        data <- data |> dplyr::rename(
-          `Event ID`= event,
-          `Storm Date`= first_rain,
-          `Total Rainfall (mm)` = total_rainfall,
-          `Average Rainfall Intensity (mm/hr)` = avg_rainfall_intensity,
-          `Peak 5-min Rainfall Intensity (mm/hr)` = peak_5_min_rainfall_intensity,
-          `Peak 10-min Rainfall Intensity (mm/hr)` = peak_10_min_rainfall_intensity,
-          `Peak 60-min Rainfall Intensity (mm/hr)` = peak_60_min_rainfall_intensity,
-          `Antecedent Dry Period (days)` = antecedent_dry_period
-        )
-      } else {
-        data <- data |> dplyr::rename(
-          `Event ID`= event,
-          `Storm Date`= first_rain,
-          `Total Rainfall (inches)` = total_rainfall,
-          `Average Rainfall Intensity (inch/hr)` = avg_rainfall_intensity,
-          `Peak 5-min Rainfall Intensity (inch/hr)` = peak_5_min_rainfall_intensity,
-          `Peak 10-min Rainfall Intensity (inch/hr)` = peak_10_min_rainfall_intensity,
-          `Peak 60-min Rainfall Intensity (inch/hr)` = peak_60_min_rainfall_intensity,
-          `Antecedent Dry Period (days)` = antecedent_dry_period
-        )
-      }
-      DT::datatable(
-        data,
-        caption = htmltools::tags$caption(
-          style = 'caption-side: top; text-align: center; color:black;  font-size:200% ;',
-          'Statistics of the rainfall data'
-        ),
-        options = list(searching = FALSE, lengthChange = FALSE),
-        rownames = FALSE,
-        selection = 'none'
-      )
-    } else if (input$analysistype == 'flow'){
-      data <- statistics()
-      
-      DT::datatable(
-        data |>
-          mutate(start_time = as.POSIXct(start_time)) |>
-          #select(flow_type,start_time,peak_flow_rate,runoff_duration) |>
-          select(flow_type, peak_flow_rate, runoff_duration, runoff_volume) |>
-          
-          setNames(
-            c(
-              "Type of flow",
-              #"Storm Date",
-              glue("Peak flow rate ({flow_volume_unit()}/{flow_time_unit()})"),
-              glue("Duration of runoff (h)"),
-              glue("Runoff volume ({flow_volume_unit()})")
-            )
+        data <- data |> 
+          dplyr::select(-last_rain) |>
+          dplyr::rename(
+            `Event ID`= event,
+            `Storm Date`= first_rain,
+            `Total Rainfall (mm)` = total_rainfall,
+            `Average Rainfall Intensity (mm/hr)` = avg_rainfall_intensity,
+            `Peak 5-min Rainfall Intensity (mm/hr)` = peak_5_min_rainfall_intensity,
+            `Peak 10-min Rainfall Intensity (mm/hr)` = peak_10_min_rainfall_intensity,
+            `Peak 60-min Rainfall Intensity (mm/hr)` = peak_60_min_rainfall_intensity,
+            `Antecedent Dry Period (days)` = antecedent_dry_period
           )
-        ,
-        caption = htmltools::tags$caption(
-          style = 'caption-side: top; text-align: center; color:black;  font-size:200% ;',
-          'Statistics of the flow data'
-        ),
-        options = list(searching = FALSE, lengthChange = FALSE),
-        rownames = FALSE,
-        selection = 'none'
-      )
+      } else {
+        data <- data |> 
+          dplyr::select(-last_rain) |>
+          dplyr::rename(
+            `Event ID`= event,
+            `Storm Date`= first_rain,
+            `Total Rainfall (inches)` = total_rainfall,
+            `Average Rainfall Intensity (inch/hr)` = avg_rainfall_intensity,
+            `Peak 5-min Rainfall Intensity (inch/hr)` = peak_5_min_rainfall_intensity,
+            `Peak 10-min Rainfall Intensity (inch/hr)` = peak_10_min_rainfall_intensity,
+            `Peak 60-min Rainfall Intensity (inch/hr)` = peak_60_min_rainfall_intensity,
+            `Antecedent Dry Period (days)` = antecedent_dry_period
+          )
+      }
+    } else if (input$analysistype == 'flow'){
+      data <- statistics() |>
+        mutate(start_time = as.POSIXct(start_time)) |>
+        select(flow_type, peak_flow_rate, runoff_duration, runoff_volume) |>
+        setNames(
+          c(
+            "Type of flow",
+            #"Storm Date",
+            glue("Peak flow rate ({flow_volume_unit()}/{flow_time_unit()})"),
+            glue("Duration of runoff (h)"),
+            glue("Runoff volume ({flow_volume_unit()})")
+          )
+        )
     } else {
       data <- statistics()
     }
+    data
+  }) |>
+    bindEvent(statistics())
+  
+  output$stats <- DT::renderDataTable({
+    if (input$analysistype == "rainfall") {
+      caption = htmltools::tags$caption(
+        style = 'caption-side: top; text-align: center; color:black;  font-size:200% ;',
+        'Statistics of the rainfall data'
+      ) 
+    } else {
+      caption = htmltools::tags$caption(
+        style = 'caption-side: top; text-align: center; color:black;  font-size:200% ;',
+        'Statistics of the flow data'
+      )
+    }
     
-  }) |> bindEvent(input$submit)
+    DT::datatable(
+      stats(),
+      caption = caption,
+      options = list(searching = FALSE, lengthChange = FALSE),
+      rownames = FALSE,
+      selection = 'none'
+    )
+  }) 
   
   
   output$percent_change = renderText({
@@ -806,7 +801,7 @@ server <- function(input, output, session) {
       paste("summary_table", ".csv", sep = "")
     },
     content = function(file) {
-      write.csv(statistics(), file, row.names = FALSE)
+      write.csv(stats(), file, row.names = FALSE)
     }
   )
   
@@ -829,9 +824,9 @@ server <- function(input, output, session) {
         df <- df %>% mutate(
           eventid = event,
           startdate = as.Date(first_rain),
-          starttime = format(first_rain, "%H:%M:%S"),
+          starttime = format(as.POSIXct(first_rain), format = "%H:%M:%S"),
           enddate = as.Date(last_rain),
-          endtime = format(df$last_rain, "%H:%M:%S"),
+          endtime = format(df$last_rain, format = "%H:%M:%S"),
           totaldepth = total_rainfall, 
           totaldepthunits = totaldepthunits,
           onehourpeakrate = peak_60_min_rainfall_intensity,
