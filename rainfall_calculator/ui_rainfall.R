@@ -2,36 +2,51 @@ library(shiny)
 
 
 rainfallUI <- function(id) {
-  
+  shinyjs::useShinyjs()
   tagList(
     column(
       6,
       align = "left",
       style = "vertical-align: top",
-      fileInput(
-        "file",
-        "Step 1: Upload rainfall data (.xlsx file). The template is provided in the Instruction section.",
-        multiple = FALSE,
-        accept = ".xlsx"
+      HTML("<strong>Step 1: Upload rainfall data</strong>"),
+      column(
+        12,
+        "The template is provided in the Instructions section below.",
+        fileInput(
+          "file",
+          "Choose Excel File",
+          multiple = FALSE,
+          accept = ".xlsx"
+        )
       ),
-      selectInput(
-        inputId = "rainfall_unit",
-        label = "Step 2: Indicate units of rainfall measurement",
-        choices = c("inch", "mm"),
-        selected = "inch"
-      ),
-      textInput(
-        inputId = "title",
-        label = "Step 3: Input a title for the graph (optional)",
-        placeholder = "Enter an optional title for the graph(s)",
-        value = "",
-        width = "100%"
-      ),
-      shiny::textOutput("resubmit_notice"),
-      shinyjs::disabled(shinyWidgets::actionBttn("submit", "Submit"))
+      HTML("<strong>Step 2: Indicate units of rainfall measurement</strong>"),
+      column(
+        12,
+        selectInput(
+          inputId = "rainfall_unit",
+          label = "Rainfall Units",
+          choices = c("inch", "mm"),
+          selected = "inch"
+        )
+      )
     ),
     column(
-      6
+      6,
+      HTML("<strong>Step 3 (Optional): Input a title for the graph</strong>"),
+      column(
+        12,
+        htmltools::tagQuery(
+          textInput(
+            inputId = "title",
+            label = "Graph Title",
+            placeholder = "Enter an optional title for the graph",
+            value = "",
+            width = "100%"
+          )
+        )$children("input")$addAttrs(maxlength=40)$allTags(),
+        shiny::textOutput("resubmit_notice"),
+        shinyjs::disabled(shinyWidgets::actionBttn("submit", "Submit"))
+      )
     )
   )
 }
