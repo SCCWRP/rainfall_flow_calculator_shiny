@@ -56,6 +56,7 @@ server <- function(input, output, session) {
   
   rainfall_file_validator$add_rule("file", function(file) has_no_negative_values(file))
   
+  rainfall_file_validator$add_rule("file", function(file) is_small_enough(file))
   
   flow_file_validator <- shinyvalidate::InputValidator$new()
   
@@ -81,6 +82,7 @@ server <- function(input, output, session) {
   
   flow_file_validator$add_rule("file", function(file) has_valid_outflow_time(file))
   
+  flow_file_validator$add_rule("file", function(file) is_small_enough(file))
   
   observe({
     shinyjs::disable("analysistype")
@@ -134,8 +136,8 @@ server <- function(input, output, session) {
   
   rain_unit <- reactive({
     if (input$analysistype == 'rainfall'){
-      if (input$rainfall_unit == "inch"){
-        out <- "inch"
+      if (input$rainfall_unit == "in"){
+        out <- "in"
       } else {
         out <- "mm"
       }
@@ -146,7 +148,8 @@ server <- function(input, output, session) {
     if (input$analysistype == 'flow'){
       out <- strsplit(input$flow_unit,"/")[[1]][1]
     }
-  })
+  }) |>
+    bindEvent(input$submit)
   
   flow_time_unit <- reactive({
     if (input$analysistype == 'flow'){
@@ -154,7 +157,7 @@ server <- function(input, output, session) {
       out <- strsplit(input$flow_unit,"/")[[1]][2]
       
     }
-  }) |> bindEvent(input$flow_unit)
+  }) |> bindEvent(input$submit)
   
   ranges <- reactiveValues(x = NULL, y = NULL)
   ##
@@ -529,11 +532,11 @@ server <- function(input, output, session) {
           dplyr::rename(
             `Event ID`= event,
             `Storm Date`= first_rain,
-            `Total Rainfall (inches)` = total_rainfall,
-            `Average Rainfall Intensity (inch/hr)` = avg_rainfall_intensity,
-            `Peak 5-min Rainfall Intensity (inch/hr)` = peak_5_min_rainfall_intensity,
-            `Peak 10-min Rainfall Intensity (inch/hr)` = peak_10_min_rainfall_intensity,
-            `Peak 60-min Rainfall Intensity (inch/hr)` = peak_60_min_rainfall_intensity,
+            `Total Rainfall (in)` = total_rainfall,
+            `Average Rainfall Intensity (in/hr)` = avg_rainfall_intensity,
+            `Peak 5-min Rainfall Intensity (in/hr)` = peak_5_min_rainfall_intensity,
+            `Peak 10-min Rainfall Intensity (in/hr)` = peak_10_min_rainfall_intensity,
+            `Peak 60-min Rainfall Intensity (in/hr)` = peak_60_min_rainfall_intensity,
             `Antecedent Dry Period (days)` = antecedent_dry_period
           )
       }
@@ -546,7 +549,7 @@ server <- function(input, output, session) {
             "Type of flow",
             #"Storm Date",
             glue("Peak flow rate ({flow_volume_unit()}/{flow_time_unit()})"),
-            glue("Duration of runoff (h)"),
+            glue("Duration of runoff (hr)"),
             glue("Runoff volume ({flow_volume_unit()})")
           )
         )
@@ -556,6 +559,75 @@ server <- function(input, output, session) {
     data
   }) |>
     bindEvent(statistics())
+  
+  stats_SI <- reactive({
+    if (input$analysistype == 'rainfall'){
+      if (input$rainfall_unit == "mm"){
+        stats_SI_out <- stats()
+      } else {
+        stats_SI_out <- stats() |>
+          dplyr::mutate(
+            `Event ID`= `Event ID`,
+            `Storm Date`= `Storm Date`,
+            `Total Rainfall (mm)` = round(`Total Rainfall (in)`*25.4, 2),
+            `Average Rainfall Intensity (mm/hr)` = round(`Average Rainfall Intensity (in/hr)`*25.4, 2),
+            `Peak 5-min Rainfall Intensity (mm/hr)` = round(`Peak 5-min Rainfall Intensity (in/hr)`*25.4, 2),
+            `Peak 10-min Rainfall Intensity (mm/hr)` = round(`Peak 10-min Rainfall Intensity (in/hr)`*25.4, 2),
+            `Peak 60-min Rainfall Intensity (mm/hr)` = round(`Peak 60-min Rainfall Intensity (in/hr)`*25.4, 2),
+            `Antecedent Dry Period (days)` = `Antecedent Dry Period (days)`,
+            .keep = 'none'
+          ) |>
+          select(
+            `Event ID`,
+            `Storm Date`,
+            `Total Rainfall (mm)`,
+            `Average Rainfall Intensity (mm/hr)`,
+            `Peak 5-min Rainfall Intensity (mm/hr)`,
+            `Peak 10-min Rainfall Intensity (mm/hr)`,
+            `Peak 60-min Rainfall Intensity (mm/hr)`,
+            `Antecedent Dry Period (days)`
+          )
+      }
+    } else {
+      if (flow_volume_unit() == "L") { # L/s
+        stats_SI_out <- stats()
+      } else if (flow_volume_unit() == "gal") { # gal/min
+        stats_SI_out <- stats() |>
+          mutate(
+            `Type of flow` = `Type of flow`,
+            `Peak flow rate (L/s)` = round(1/(3.785*60)*`Peak flow rate (gal/min)`, 2),
+            `Duration of runoff (hr)` = `Duration of runoff (hr)`,
+            `Runoff volume (L)` = round(1/3.785*`Runoff volume (gal)`, 2),
+            .keep = 'none'
+          ) |>
+          select(
+            `Type of flow`,
+            `Peak flow rate (L/s)`,
+            `Duration of runoff (hr)`,
+            `Runoff volume (L)`
+          )
+      } else { # ft3/s
+        stats_SI_out <- stats() |>
+          mutate(
+            `Type of flow` = `Type of flow`,
+            `Peak flow rate (L/s)` = round(1/28.317*`Peak flow rate (ft3/s)`, 2),
+            `Duration of runoff (hr)` = `Duration of runoff (hr)`,
+            `Runoff volume (L)` = round(1/28.317*`Runoff volume (ft3)`, 2),
+            .keep = 'none'
+          ) |>
+          select(
+            `Type of flow`,
+            `Peak flow rate (L/s)`,
+            `Duration of runoff (hr)`,
+            `Runoff volume (L)`
+          )
+      }
+    }
+
+    stats_SI_out
+  }) |>
+    bindEvent(stats())
+  
   
   output$stats <- DT::renderDataTable({
     if (input$analysistype == "rainfall") {
@@ -798,10 +870,11 @@ server <- function(input, output, session) {
   
   output$download_summary <- downloadHandler(
     filename = function() {
-      paste("summary_table", ".csv", sep = "")
+      paste("summary_table", ".xlsx", sep = "")
     },
     content = function(file) {
-      write.csv(stats(), file, row.names = FALSE)
+      wb <- openxlsx::createWorkbook()
+      openxlsx::write.xlsx(list(User_Defined_Units = stats(), SI_Units = stats_SI()), file = file, rowNames = FALSE)
     }
   )
   
@@ -818,8 +891,8 @@ server <- function(input, output, session) {
           totaldepthunits <- 'mm'
           onehourpeakrateunit <- 'mm/hr'
         } else {
-          totaldepthunits <- 'inch'
-          onehourpeakrateunit <- 'inch/hr'
+          totaldepthunits <- 'in'
+          onehourpeakrateunit <- 'in/hr'
         }
         df <- df %>% mutate(
           eventid = event,
@@ -858,9 +931,14 @@ server <- function(input, output, session) {
           dateend = as.Date(end_time),
           timeend = format(end_time, "%H:%M:%S"),
           volumetotal = runoff_volume , 
-          volumeunits = glue("{flow_volume_unit()}"),
+          volumeunits = flow_volume_unit(),
           peakflowrate = peak_flow_rate,
-          peakflowunits = glue("{flow_volume_unit()}/{flow_time_unit()}")
+          # peakflowunits = glue("{flow_volume_unit()}/{flow_time_unit()}")
+          peakflowunits = case_when(
+            flow_volume_unit() == "L" ~ "lps",
+            flow_volume_unit() == "ft3" ~ "cfs",
+            .default = glue("{flow_volume_unit()}/{flow_time_unit()}")
+          )
         ) %>% select(
           monitoringstation, 
           datestart, 
@@ -871,10 +949,7 @@ server <- function(input, output, session) {
           volumeunits, 
           peakflowrate, 
           peakflowunits
-        )  %>% mutate(
-          peakflowunits = gsub("L/s", "lps", peakflowunits)
         )
-        
       }
       
       write.csv(df, file, row.names = FALSE)

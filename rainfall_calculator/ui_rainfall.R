@@ -25,8 +25,8 @@ rainfallUI <- function(id) {
         selectInput(
           inputId = "rainfall_unit",
           label = "Rainfall Units",
-          choices = c("inch", "mm"),
-          selected = "inch"
+          choices = c("in", "mm"),
+          selected = "in"
         )
       )
     ),

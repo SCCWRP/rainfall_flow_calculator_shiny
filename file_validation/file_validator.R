@@ -163,3 +163,18 @@ has_valid_outflow_time <- function(file) {
     return(glue::glue("Invalid outflow timestamps. The first outflow timestamp should be after all inflow and/or bypass timestamps."))
   }
 }
+
+is_small_enough <- function(file) {
+  sheets <- readxl::excel_sheets(file$datapath)[-1]
+  data <- lapply(sheets, function(sheet) readxl::read_excel(file$datapath, sheet = sheet))
+  
+  min_datetime <- do.call(min, lapply(data, function(x) min(x$datetime)))
+  max_datetime <- do.call(max, lapply(data, function(x) max(x$datetime)))
+  
+  if (lubridate::time_length(max_datetime - min_datetime, unit = "days") <= 31) {
+    return(NULL)
+  }
+  else {
+    return("File has too long of a date range. Maximum date range is one month.")
+  }
+}

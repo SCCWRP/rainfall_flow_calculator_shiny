@@ -28,7 +28,7 @@ flowUI <- function(id) {
           label = "Flow Units",
           choices = c(
             "L/s" = "L/s",
-            "g/min (gpm)" = "g/m",
+            "gal/min" = "gal/min",
             "ft3/s (cfs)" = "ft3/s"
           ),
           selected = "L/s"
