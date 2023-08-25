@@ -595,9 +595,9 @@ server <- function(input, output, session) {
         stats_SI_out <- stats() |>
           mutate(
             `Type of flow` = `Type of flow`,
-            `Peak flow rate (L/s)` = round(1/(3.785*60)*`Peak flow rate (gal/min)`, 2),
+            `Peak flow rate (L/s)` = round(0.063*`Peak flow rate (gal/min)`, 2),
             `Duration of runoff (hr)` = `Duration of runoff (hr)`,
-            `Runoff volume (L)` = round(1/3.785*`Runoff volume (gal)`, 2),
+            `Runoff volume (L)` = round(3.785*`Runoff volume (gal)`, 2),
             .keep = 'none'
           ) |>
           select(
@@ -610,9 +610,9 @@ server <- function(input, output, session) {
         stats_SI_out <- stats() |>
           mutate(
             `Type of flow` = `Type of flow`,
-            `Peak flow rate (L/s)` = round(1/28.317*`Peak flow rate (ft3/s)`, 2),
+            `Peak flow rate (L/s)` = round(28.317*`Peak flow rate (ft3/s)`, 2),
             `Duration of runoff (hr)` = `Duration of runoff (hr)`,
-            `Runoff volume (L)` = round(1/28.317*`Runoff volume (ft3)`, 2),
+            `Runoff volume (L)` = round(28.317*`Runoff volume (ft3)`, 2),
             .keep = 'none'
           ) |>
           select(
