@@ -762,7 +762,7 @@ server <- function(input, output, session) {
       ) %>% filter(flow_type %in% input$choose_graph) %>%
         mutate(hours = lubridate::time_length(datetime - datetime[1], unit = "minute"))
       
-      ggplot(flow_df, aes(x = datetime, y = flow, colour = flow_type)) +
+      ggplot(flow_df, aes(x = datetime, y = flow, colour = factor(flow_type, levels = c("inflow1", "inflow2", "outflow", "bypass")))) +
         geom_line() +
         ggtitle("Hydrograph") +
         scale_x_datetime(breaks = "12 hours", date_labels = "%Y-%m-%d %H:%M") + 
@@ -777,6 +777,7 @@ server <- function(input, output, session) {
         labs(
           x=glue("Datetime"),
           y=glue("Flow rate ({flow_volume_unit()}/{flow_time_unit()})"),
+          color = "Flow Type",
           title=input$title
         )
       
