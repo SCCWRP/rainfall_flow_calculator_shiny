@@ -25,7 +25,7 @@ flowUI <- function(id) {
         12,
         selectInput(
           inputId = "flow_unit",
-          label = "Flow Units",
+          label = "",
           choices = c(
             "L/s" = "L/s",
             "gal/min" = "gal/min",
